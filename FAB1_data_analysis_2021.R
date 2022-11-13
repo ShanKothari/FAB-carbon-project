@@ -453,6 +453,22 @@ C_partition<-addpart(C_estimate~sp_comp/species_code+plot,
                      groups= ~block,
                      data=C_sp_plot)
 
+# ## trying calculations manually
+# C_sp_plot$mono.means<-apply(C_sp_plot,1,
+#                             function(x) {
+#                               C_sp_plot$C_estimate[C_sp_plot$sp_comp==x["species_code"] & C_sp_plot$block==x["block"]]
+#                             })
+# C_sp_plot$RY_Oi<-C_sp_plot$C_estimate/C_sp_plot$mono.means
+# C_sp_plot$deltaRY<-C_sp_plot$RY_Oi-C_sp_plot$fractions
+# 
+# ## population covariance, borrowed from Pascal Niklaus
+# covp <- function(x, y) {
+#   sum((x - mean(x)) * (y - mean(y))) / length(x);
+# }
+# 
+# ## for a plot, sp richness*covp(mono.means,deltaRY) is selection
+# ## and sp richness*mean(mono.means)*mean(deltaRY) is complementarity
+
 ############################
 ## belowground C
 
