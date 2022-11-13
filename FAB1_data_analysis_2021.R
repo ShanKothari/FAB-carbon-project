@@ -381,6 +381,7 @@ for(i in 1:nrow(FABdata)){
 FABdata$C_content<-wood_df$C_content[match(FABdata$species_code,wood_df$species_code)]
 FABdata$C_estimate<-FABdata$biomass_estimate*FABdata$C_content
 
+## aggregate carbon by plot
 C_agg<-aggregate(FABdata$C_estimate,by=list(FABdata$plot),FUN=sum,na.rm=T)
 colnames(C_agg)<-c("plot","woodyC")
 ## these plots aren't actually surveyed
@@ -416,25 +417,43 @@ OY.agg<-OY.agg[-which(OY.agg$species_richness==1),]
 ############################
 ## aboveground woody CE/SE calculations
 
-plot_guide$sp_comp<-apply(plot_guide,1,
-                          function(plot) paste(colnames(plot_guide)[which(plot=="x")],collapse="|"))
+## for calculations to work, fix issues about misplanted species
+## in most of these plots, there's only one, but plot 31 had more severe issues
+FABdata_mod<-FABdata
+FABdata_mod$species_code[FABdata_mod$species_code=="ACRU" & FABdata_mod$plot==18]<-"ACNE"
+# FABdata_mod<-FABdata_mod[-which(FABdata_mod$plot==31),]
+FABdata_mod$species_code[FABdata_mod$species_code=="PIST" & FABdata_mod$plot==34]<-"PIRE"
+FABdata_mod$species_code[FABdata_mod$species_code=="PIST" & FABdata_mod$plot==37]<-"PIRE"
+FABdata_mod$species_code[FABdata_mod$species_code=="TIAM" & FABdata_mod$plot==147]<-"ACRU"
 
-## for calculations to work, turn the one TIAM in plot 147 ACRU mono into ACRU
-FABdata_147<-FABdata
-FABdata_147$species_code[FABdata$species_code=="TIAM" & FABdata$plot==147]<-"ACRU"
+## generate indicators of species composition
+FABplot_list<-split(FABdata_mod,f = FABdata_mod$plot)
+FABplot_comp<-unlist(lapply(FABplot_list,function(plot) paste(unique(plot$species_code),collapse="|")))
 
 ## get estimates of total woody carbon per species per plot
 C_sp_plot<-aggregate(C_estimate~species_code+plot+block,
-                     data=FABdata_147,
+                     data=FABdata_mod,
                      FUN=sum)
-C_sp_plot$sp_comp<-plot_guide$sp_comp[match(C_sp_plot$plot,plot_guide$Plot)]
+C_sp_plot$sp_comp<-FABplot_comp[match(C_sp_plot$plot,names(FABplot_comp))]
 
 ## estimate fractions
+## fulcrum_id is just a haphazardly chosen (and irrelevant) variable
+counts<-aggregate(fulcrum_id~species_code+plot,
+                  data=FABdata_mod,
+                  FUN=length)
+counts$fractions<-counts$fulcrum_id/64
+
+## check that they have the same order of species and plots
+## this should return the number of rows in both counts and C_sp_plot
+sum(counts$species_code==C_sp_plot$species_code & counts$plot==C_sp_plot$plot)
+C_sp_plot$fractions<-counts$fractions
 
 C_partition<-addpart(C_estimate~sp_comp/species_code+plot,
-                     data=C_sp_plot,
-                     groups= ~block)
-  
+                     fractions= ~fractions,
+                     groups= ~block,
+                     data=C_sp_plot)
+
+
 ############################
 ## belowground C
 
