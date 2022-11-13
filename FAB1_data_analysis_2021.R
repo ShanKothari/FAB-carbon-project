@@ -458,6 +458,7 @@ C_partition<-addpart(C_estimate~sp_comp/species_code+plot,
 #                             function(x) {
 #                               C_sp_plot$C_estimate[C_sp_plot$sp_comp==x["species_code"] & C_sp_plot$block==x["block"]]
 #                             })
+# C_sp_plot$mono.exp<-C_sp_plot$mono.means*C_sp_plot$fractions
 # C_sp_plot$RY_Oi<-C_sp_plot$C_estimate/C_sp_plot$mono.means
 # C_sp_plot$deltaRY<-C_sp_plot$RY_Oi-C_sp_plot$fractions
 # 
