@@ -417,13 +417,8 @@ OY.agg<-OY.agg[-which(OY.agg$species_richness==1),]
 ############################
 ## aboveground woody CE/SE calculations
 
-## for calculations to work, fix issues about misplanted species
-## in most of these plots, there's only one, but plot 31 had more severe issues
+## for calculations to work, need to fix misplant in ACRU monoculture 147
 FABdata_mod<-FABdata
-FABdata_mod$species_code[FABdata_mod$species_code=="ACRU" & FABdata_mod$plot==18]<-"ACNE"
-# FABdata_mod<-FABdata_mod[-which(FABdata_mod$plot==31),]
-FABdata_mod$species_code[FABdata_mod$species_code=="PIST" & FABdata_mod$plot==34]<-"PIRE"
-FABdata_mod$species_code[FABdata_mod$species_code=="PIST" & FABdata_mod$plot==37]<-"PIRE"
 FABdata_mod$species_code[FABdata_mod$species_code=="TIAM" & FABdata_mod$plot==147]<-"ACRU"
 
 ## generate indicators of species composition
