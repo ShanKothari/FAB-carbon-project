@@ -419,6 +419,10 @@ OY.agg<-OY.agg[-which(OY.agg$species_richness==1),]
 
 ## for calculations to work, need to fix misplant in ACRU monoculture 147
 FABdata_mod<-FABdata
+## these two lines don't seem to be doing anything?
+## due to misplants CE + SE don't quite add up to OY as calculated above
+replacement<-mean(FABdata_mod$C_estimate[FABdata_mod$species_code=="ACRU" & FABdata_mod$plot==147],na.rm=T)
+FABdata_mod$C_estimate[FABdata_mod$species_code=="TIAM" & FABdata_mod$plot==147]<-replacement
 FABdata_mod$species_code[FABdata_mod$species_code=="TIAM" & FABdata_mod$plot==147]<-"ACRU"
 
 ## generate indicators of species composition
@@ -429,9 +433,10 @@ FABplot_comp<-unlist(lapply(FABplot_list,function(plot) paste(unique(plot$specie
 C_sp_plot<-aggregate(C_estimate~species_code+plot+block,
                      data=FABdata_mod,
                      FUN=sum)
+## add composition indicators
 C_sp_plot$sp_comp<-FABplot_comp[match(C_sp_plot$plot,names(FABplot_comp))]
 
-## estimate fractions
+## estimate fractions of each species in each plot
 ## fulcrum_id is just a haphazardly chosen (and irrelevant) variable
 counts<-aggregate(fulcrum_id~species_code+plot,
                   data=FABdata_mod,
@@ -447,7 +452,6 @@ C_partition<-addpart(C_estimate~sp_comp/species_code+plot,
                      fractions= ~fractions,
                      groups= ~block,
                      data=C_sp_plot)
-
 
 ############################
 ## belowground C
@@ -526,6 +530,8 @@ plot(belowground_sub$root_OY~belowground_sub$Sp.Richness)
 
 C_agg$block<-plot_guide$Block[match(C_agg$plot,plot_guide$Plot)]
 C_agg$woodyOY<-OY.agg$ind.OY[match(C_agg$plot,OY.agg$plot)]
+C_agg$woodyCE<-C_partition$CE.C_estimate[match(C_agg$plot,C_partition$plot)]
+C_agg$woodySE<-C_partition$SE.C_estimate[match(C_agg$plot,C_partition$plot)]
 C_agg$soilC<-belowground$soilC_diff_plot[match(C_agg$plot,belowground$Plot)]
 C_agg$soilC_pool<-belowground$soilC_pool_plot[match(C_agg$plot,belowground$Plot)]
 C_agg$soilOY<-belowground_sub$soil_OY[match(C_agg$plot,belowground_sub$Plot)]
@@ -566,6 +572,36 @@ AIC(mw3)
 AIC(mw4)
 AIC(mw5)
 AIC(mw6)
+
+mce_null<-lm(woodyCE~1,data=C_agg)
+mce1<-lm(woodyCE~species_richness,data=C_agg)
+mce2<-lm(woodyCE~FDis,data=C_agg)
+mce3<-lm(woodyCE~PSV,data=C_agg)
+mce4<-lm(woodyCE~species_richness+FDis,data=C_agg)
+mce5<-lm(woodyCE~species_richness+PSV,data=C_agg)
+mce6<-lm(woodyCE~species_richness+FDis+PSV,data=C_agg)
+AIC(mce_null)
+AIC(mce1)
+AIC(mce2)
+AIC(mce3)
+AIC(mce4)
+AIC(mce5)
+AIC(mce6)
+
+mse_null<-lm(woodySE~1,data=C_agg)
+mse1<-lm(woodySE~species_richness,data=C_agg)
+mse2<-lm(woodySE~FDis,data=C_agg)
+mse3<-lm(woodySE~PSV,data=C_agg)
+mse4<-lm(woodySE~species_richness+FDis,data=C_agg)
+mse5<-lm(woodySE~species_richness+PSV,data=C_agg)
+mse6<-lm(woodySE~species_richness+FDis+PSV,data=C_agg)
+AIC(mse_null)
+AIC(mse1)
+AIC(mse2)
+AIC(mse3)
+AIC(mse4)
+AIC(mse5)
+AIC(mse6)
 
 ms_null<-lm(soilOY~1,data=C_agg)
 ms1<-lm(soilOY~species_richness,data=C_agg)
