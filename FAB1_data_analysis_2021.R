@@ -1,8 +1,9 @@
-setwd("C:/Users/kotha020/Dropbox/FABCarbonProject/")
+setwd("C:/Users/querc/Dropbox/FABCarbonProject/")
 FABdata<-read.csv("ProcessedData/FAB_edited.csv")
 
 library(reshape2)
 library(ggplot2)
+library(pdiv) ## Pascal Niklaus's pdiv package
 
 ###########################
 ## estimation models
@@ -376,14 +377,14 @@ for(i in 1:nrow(FABdata)){
 #   }
 # }
 
-FABdata$C_estimate<-NA
-for(i in 1:nrow(FABdata)){
-  FABdata$C_estimate<-FABdata$biomass_estimate*wood_df$C_content[which(wood_df$species_code==FABdata$species_code[i])]
-}
+## fill in estimated carbon using species specific wood carbon concentration
+FABdata$C_content<-wood_df$C_content[match(FABdata$species_code,wood_df$species_code)]
+FABdata$C_estimate<-FABdata$biomass_estimate*FABdata$C_content
 
 C_agg<-aggregate(FABdata$C_estimate,by=list(FABdata$plot),FUN=sum,na.rm=T)
 colnames(C_agg)<-c("plot","woodyC")
-write.csv(C_agg,"ProcessedData/carbon_estimate_v2.csv",row.names = F)
+## these plots aren't actually surveyed
+C_agg<-C_agg[-which(C_agg$plot %in% c(112,119)),]
 
 plot_guide<-read.csv("OriginalData/plotkey_biomass.csv")
 C_agg$species_richness<-plot_guide$Treatment[match(C_agg$plot,plot_guide$Plot)]
@@ -399,8 +400,8 @@ FABdata$C_estimate[which(is.na(FABdata$C_estimate))]<-0
 
 ## calculate overyielding matching to the monoculture of the same block
 mono.means<-aggregate(C_estimate~species_code+block,
-                            data=FABdata[FABdata$species_richness==1,],
-                            FUN=mean)
+                      data=FABdata[FABdata$species_richness==1,],
+                      FUN=mean)
 FABdata$mono.means<-apply(FABdata,1,
                                 function(x) {
                                   mono.means$C_estimate[mono.means$species_code==x["species_code"] & mono.means$block==x["block"]]
@@ -412,6 +413,28 @@ OY.agg$species_richness<-plot_guide$Treatment[match(OY.agg$plot,plot_guide$Plot)
 OY.agg$block<-plot_guide$Block[match(OY.agg$plot,plot_guide$Plot)]
 OY.agg<-OY.agg[-which(OY.agg$species_richness==1),]
 
+############################
+## aboveground woody CE/SE calculations
+
+plot_guide$sp_comp<-apply(plot_guide,1,
+                          function(plot) paste(colnames(plot_guide)[which(plot=="x")],collapse="|"))
+
+## for calculations to work, turn the one TIAM in plot 147 ACRU mono into ACRU
+FABdata_147<-FABdata
+FABdata_147$species_code[FABdata$species_code=="TIAM" & FABdata$plot==147]<-"ACRU"
+
+## get estimates of total woody carbon per species per plot
+C_sp_plot<-aggregate(C_estimate~species_code+plot+block,
+                     data=FABdata_147,
+                     FUN=sum)
+C_sp_plot$sp_comp<-plot_guide$sp_comp[match(C_sp_plot$plot,plot_guide$Plot)]
+
+## estimate fractions
+
+C_partition<-addpart(C_estimate~sp_comp/species_code+plot,
+                     data=C_sp_plot,
+                     groups= ~block)
+  
 ############################
 ## belowground C
 
@@ -436,14 +459,22 @@ belowground$BD[belowground$block==3]<-mean(BD_wide$BD[BD_wide$block==3])
 ## estimate accumulation of soil carbon -- first take the difference in percent
 ## assumes bulk density remains unchanged
 belowground$soilC_diff<-belowground$X..C_2019-belowground$X.C_2013
-## to g C / cm^3 soil accumulated
+belowground$soilN_diff<-belowground$X..N_2019-belowground$X.N_2013
+## to g C accumulated / cm^3 soil
 belowground$soilC_diff_vol<-belowground$soilC_diff/100*belowground$BD
+belowground$soilN_diff_vol<-belowground$soilN_diff/100*belowground$BD
 ## 200000 cm^3 per m^2 sampled, 16 m^2 per plot, 1000 g per kg
 belowground$soilC_diff_plot<-belowground$soilC_diff_vol*200000*16/1000
-belowground$totalC_seq<-belowground$above_C+belowground$soilC_diff_plot
+belowground$soilN_diff_plot<-belowground$soilN_diff_vol*200000*16/1000
+
+## soil C pool (not change)
+belowground$soilC_pool_vol<-belowground$X..C_2019/100*belowground$BD
+belowground$soilC_pool_plot<-belowground$soilC_pool_vol*200000*16/1000
+
 ## root carbon, assuming roots are 50% carbon
 ## sampled from 2 in diameter root cores, 5 cores per plot
 belowground$rootC<-belowground$Roots.Dry.Mass/(5*2.54^2*pi)*10000*16*0.5/1000
+belowground$rootC[belowground$Plot %in% c(60,76,96,114)]<-NA
 
 sp_comp<-belowground[,c("Plot","Sp.Richness","block","soilC_diff_plot","rootC",
                         "ACNE","ACRU","BEPA","JUVI",
@@ -482,8 +513,72 @@ plot(belowground_sub$root_OY~belowground_sub$Sp.Richness)
 C_agg$block<-plot_guide$Block[match(C_agg$plot,plot_guide$Plot)]
 C_agg$woodyOY<-OY.agg$ind.OY[match(C_agg$plot,OY.agg$plot)]
 C_agg$soilC<-belowground$soilC_diff_plot[match(C_agg$plot,belowground$Plot)]
+C_agg$soilC_pool<-belowground$soilC_pool_plot[match(C_agg$plot,belowground$Plot)]
 C_agg$soilOY<-belowground_sub$soil_OY[match(C_agg$plot,belowground_sub$Plot)]
 C_agg$rootC<-belowground$rootC[match(C_agg$plot,belowground$Plot)]
 C_agg$rootOY<-belowground_sub$root_OY[match(C_agg$plot,belowground_sub$Plot)]
+C_agg$totalC<-C_agg$woodyC+C_agg$soilC+C_agg$rootC
+C_agg$totalOY<-C_agg$woodyOY+C_agg$soilOY+C_agg$rootOY
+
+C_agg$soilN<-belowground$soilN_diff_plot[match(C_agg$plot,belowground$Plot)]
+C_agg$logBA<-log(C_agg$rootC/C_agg$woodyC)
+
+#############################
+## add functional and phylogenetic diversity
+
+FD<-read.csv("OriginalData/ecy1958-sup-0003-tables1.csv")
+C_agg$PSV<-FD$PSV[match(C_agg$plot,FD$Plot)]
+C_agg$FDis<-FD$FDis[match(C_agg$plot,FD$Plot)]
 
 write.csv(C_agg,"ProcessedData/Cseq.csv",row.names = F)
+
+#############################
+## AIC-based model selection for predictors of OY
+
+library(lme4)
+library(lmerTest)
+
+mw_null<-lm(woodyOY~1,data=C_agg)
+mw1<-lm(woodyOY~species_richness,data=C_agg)
+mw2<-lm(woodyOY~FDis,data=C_agg)
+mw3<-lm(woodyOY~PSV,data=C_agg)
+mw4<-lm(woodyOY~species_richness+FDis,data=C_agg)
+mw5<-lm(woodyOY~species_richness+PSV,data=C_agg)
+mw6<-lm(woodyOY~species_richness+FDis+PSV,data=C_agg)
+AIC(mw_null)
+AIC(mw1)
+AIC(mw2)
+AIC(mw3)
+AIC(mw4)
+AIC(mw5)
+AIC(mw6)
+
+ms_null<-lm(soilOY~1,data=C_agg)
+ms1<-lm(soilOY~species_richness,data=C_agg)
+ms2<-lm(soilOY~FDis,data=C_agg)
+ms3<-lm(soilOY~PSV,data=C_agg)
+ms4<-lm(soilOY~species_richness+FDis,data=C_agg)
+ms5<-lm(soilOY~species_richness+PSV,data=C_agg)
+ms6<-lm(soilOY~species_richness+FDis+PSV,data=C_agg)
+AIC(ms_null)
+AIC(ms1)
+AIC(ms2)
+AIC(ms3)
+AIC(ms4)
+AIC(ms5)
+AIC(ms6)
+
+mr_null<-lm(rootOY~1,data=C_agg)
+mr1<-lm(rootOY~species_richness,data=C_agg)
+mr2<-lm(rootOY~FDis,data=C_agg)
+mr3<-lm(rootOY~PSV,data=C_agg)
+mr4<-lm(rootOY~species_richness+FDis,data=C_agg)
+mr5<-lm(rootOY~species_richness+PSV,data=C_agg)
+mr6<-lm(rootOY~species_richness+FDis+PSV,data=C_agg)
+AIC(mr_null)
+AIC(mr1)
+AIC(mr2)
+AIC(mr3)
+AIC(mr4)
+AIC(mr5)
+AIC(mr6)
