@@ -186,6 +186,65 @@ C_agg$soilN<-belowground$soilN_diff_plot[match(C_agg$plot,belowground$Plot)]
 C_agg$logBA<-log(C_agg$rootC/C_agg$woodyC)
 
 #############################
+## plot monoculture biomass
+
+C_agg_mono<-C_agg[which(C_agg$species_richness==1),]
+C_agg_mono$species<-C_sp_plot$sp_comp[match(C_agg_mono$plot,C_sp_plot$plot)]
+
+ggplot(C_agg_mono,aes(x=species,y=log10(woodyC)))+
+  geom_boxplot()+theme_bw()+
+  labs(y="Woody C (kg per plot)")
+
+ggplot(C_agg_mono,aes(x=species,y=soilC))+
+  geom_boxplot()+theme_bw()+
+  labs(y="Change in soil C (kg per plot)")
+
+#############################
+## various basic plots
+
+png("Images/soilC_div.png",width=5,height=5,units = "in",res=150)
+ggplot(C_agg,aes(x=species_richness,y=soilC))+
+  geom_point(size=2)+theme_bw()+
+  theme(text = element_text(size=20),
+        plot.margin = margin(0.1,0.2,0,0,"in"))+
+  labs(x="Species richness",y=expression("Soil C accrual (kg plot"^-1*")"))
+dev.off()
+
+ggplot(C_agg,aes(x=species_richness,y=soilOY))+
+  geom_point(size=2)+theme_bw()+
+  theme(text = element_text(size=20),
+        plot.margin = margin(0.1,0.2,0,0,"in"))+
+  labs(x="Species richness",y=expression("Soil C overyielding (kg plot"^-1*")"))
+
+png("Images/woodyC_div.png",width=5,height=5,units = "in",res=150)
+ggplot(C_agg,aes(x=species_richness,y=woodyC))+
+  geom_point(size=2)+theme_bw()+
+  theme(text = element_text(size=20),
+        plot.margin = margin(0.1,0.2,0,0,"in"))+
+  labs(x="Species richness",y=expression("Wood C (kg plot"^-1*")"))
+dev.off()
+
+png("Images/woodyOY_div.png",width=5,height=5,units = "in",res=150)
+ggplot(C_agg,aes(x=species_richness,y=woodyOY))+
+  geom_point(size=2)+
+  geom_smooth(method="lm",se=F)+
+  theme_bw()+
+  theme(text = element_text(size=20),
+        plot.margin = margin(0.1,0.2,0,0,"in"))+
+  labs(x="Species richness",y=expression("Wood C overyielding (kg plot"^-1*")"))
+dev.off()
+
+png("Images/soil_wood_C.png",width=5,height=5,units = "in",res=150)
+ggplot(C_agg,aes(x=soilC,y=woodyC))+
+  geom_point(size=2)+
+  theme_bw()+
+  theme(text = element_text(size=20),
+        plot.margin = margin(0.1,0.2,0,0,"in"))+
+  labs(x=expression("Soil C accrual (kg plot"^-1*")"),
+       y=expression("Wood C (kg plot"^-1*")"))
+dev.off()
+
+#############################
 ## add functional and phylogenetic diversity
 
 FD<-read.csv("OriginalData/ecy1958-sup-0003-tables1.csv")
