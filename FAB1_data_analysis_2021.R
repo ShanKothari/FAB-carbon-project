@@ -134,6 +134,7 @@ belowground$soilC_pool_plot<-belowground$soilC_pool_vol*200000*16/1000
 ## root carbon, assuming roots are 50% carbon
 ## sampled from 2 in diameter root cores, 5 cores per plot
 belowground$rootC<-belowground$Roots.Dry.Mass/(5*2.54^2*pi)*10000*16*0.5/1000
+## these plots weren't actually sampled
 belowground$rootC[belowground$Plot %in% c(60,76,96,114)]<-NA
 
 sp_comp<-belowground[,c("Plot","Sp.Richness","block","soilC_diff_plot","rootC",
