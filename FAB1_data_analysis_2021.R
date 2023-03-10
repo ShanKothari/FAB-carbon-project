@@ -416,3 +416,16 @@ AIC(mma4)
 AIC(mma5)
 AIC(mma6)
 AIC(mma7)
+
+###############################################
+## putting C into a nicer form for Craig
+
+C_ha<-data.frame(plot=C_agg$plot,
+                 richness=C_agg$species_richness,
+                 woodyC=C_agg$woodyC*10000/16,
+                 rootC=C_agg$rootC*10000/16,
+                 soilC=C_agg$soilC*10000/16)
+C_ha$composition<-FABplot_comp[match(C_ha$plot,names(FABplot_comp))]
+# C_ha<-C_ha[C_ha$richness==1,]
+
+write.csv(C_ha,"ProcessedData/C_composition.csv")
