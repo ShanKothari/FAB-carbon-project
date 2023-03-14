@@ -2,6 +2,7 @@ setwd("C:/Users/querc/Dropbox/FABCarbonProject/")
 
 library(reshape2)
 library(ggplot2)
+library(ggpubr)
 library(pdiv) ## Pascal Niklaus's pdiv package
 
 FABdata<-read.csv("ProcessedData/FAB_Cestimate.csv")
@@ -193,13 +194,23 @@ C_agg$logBA<-log(C_agg$rootC/C_agg$woodyC)
 C_agg_mono<-C_agg[which(C_agg$species_richness==1),]
 C_agg_mono$species<-C_sp_plot$sp_comp[match(C_agg_mono$plot,C_sp_plot$plot)]
 
-ggplot(C_agg_mono,aes(x=species,y=log10(woodyC)))+
+wood_mono<-ggplot(C_agg_mono,aes(x=species,y=woodyC))+
   geom_boxplot()+theme_bw()+
-  labs(y="Woody C (kg per plot)")
+  theme(text=element_text(size=20),
+        axis.text.x = element_blank(),
+        axis.title.x = element_blank())+
+  labs(y="Woody C (kg per plot)",x="Species")
 
-ggplot(C_agg_mono,aes(x=species,y=soilC))+
+soil_mono<-ggplot(C_agg_mono,aes(x=species,y=soilC))+
   geom_boxplot()+theme_bw()+
-  labs(y="Change in soil C (kg per plot)")
+  theme(text=element_text(size=20),
+        axis.text.x = element_text(angle = 45, vjust = 1, hjust=1))+
+  labs(y="Change in soil C (kg per plot)",x="Species")
+
+png("Images/wood_soil_mono.png",width=8,height=8,units = "in",res=150)
+ggarrange(plotlist = list(wood_mono,soil_mono),
+          ncol=1,heights=c(1,1.3))
+dev.off()
 
 #############################
 ## various basic plots
@@ -207,16 +218,20 @@ ggplot(C_agg_mono,aes(x=species,y=soilC))+
 png("Images/soilC_div.png",width=5,height=5,units = "in",res=150)
 ggplot(C_agg,aes(x=species_richness,y=soilC))+
   geom_point(size=2)+theme_bw()+
+  geom_smooth(method="lm",se=F)+
   theme(text = element_text(size=20),
         plot.margin = margin(0.1,0.2,0,0,"in"))+
   labs(x="Species richness",y=expression("Soil C accrual (kg plot"^-1*")"))
 dev.off()
 
+png("Images/soilOY_div.png",width=5,height=5,units = "in",res=150)
 ggplot(C_agg,aes(x=species_richness,y=soilOY))+
   geom_point(size=2)+theme_bw()+
+  geom_smooth(method="lm",se=F)+
   theme(text = element_text(size=20),
         plot.margin = margin(0.1,0.2,0,0,"in"))+
   labs(x="Species richness",y=expression("Soil C overyielding (kg plot"^-1*")"))
+dev.off()
 
 png("Images/woodyC_div.png",width=5,height=5,units = "in",res=150)
 ggplot(C_agg,aes(x=species_richness,y=woodyC))+
