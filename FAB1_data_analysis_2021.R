@@ -7,7 +7,7 @@ library(pdiv) ## Pascal Niklaus's pdiv package
 
 FABdata<-read.csv("ProcessedData/FAB_Cestimate.csv")
 
-## aggregate carbon by plot
+## aggregate aboveground woody carbon by plot
 C_agg<-aggregate(FABdata$C_estimate,by=list(FABdata$plot),FUN=sum,na.rm=T)
 colnames(C_agg)<-c("plot","woodyC")
 ## these plots aren't actually surveyed
@@ -184,6 +184,8 @@ C_agg$rootOY<-belowground_sub$root_OY[match(C_agg$plot,belowground_sub$Plot)]
 C_agg$totalC<-C_agg$woodyC+C_agg$soilC+C_agg$rootC
 C_agg$totalOY<-C_agg$woodyOY+C_agg$soilOY+C_agg$rootOY
 C_agg$macro250<-belowground$X..Mass.of.250[match(C_agg$plot,belowground$Plot)]
+C_agg$percentAM<-belowground$X..AM.trees[match(C_agg$plot,belowground$Plot)]
+C_agg$percentCon<-belowground$X..con[match(C_agg$plot,belowground$Plot)]
 
 C_agg$soilN<-belowground$soilN_diff_plot[match(C_agg$plot,belowground$Plot)]
 C_agg$logBA<-log(C_agg$rootC/C_agg$woodyC)
@@ -274,7 +276,7 @@ C_agg$PSV[C_agg$species_richness==1]<-0
 write.csv(C_agg,"ProcessedData/Cseq.csv",row.names = F)
 
 #############################
-## AIC-based model selection for predictors of OY
+## AIC-based model selection for predictors of C stocks and OY
 
 library(lme4)
 library(lmerTest)
