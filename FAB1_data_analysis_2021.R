@@ -173,22 +173,59 @@ plot(belowground_sub$root_OY~belowground_sub$Sp.Richness)
 ## combine
 
 C_agg$block<-plot_guide$Block[match(C_agg$plot,plot_guide$Plot)]
+
+## AG woody OY, CE, and SE
 C_agg$woodyOY<-OY.agg$ind.OY[match(C_agg$plot,OY.agg$plot)]
 C_agg$woodyCE<-C_partition$CE.C_estimate[match(C_agg$plot,C_partition$plot)]
 C_agg$woodySE<-C_partition$SE.C_estimate[match(C_agg$plot,C_partition$plot)]
-C_agg$soilC<-belowground$soilC_diff_plot[match(C_agg$plot,belowground$Plot)]
-C_agg$soilC_pool<-belowground$soilC_pool_plot[match(C_agg$plot,belowground$Plot)]
+
+## percentages of soil C and N
+belowground_match<-match(C_agg$plot,belowground$Plot)
+C_agg$perC<-belowground$X..C_2019[belowground_match]
+C_agg$perN<-belowground$X..N_2019[belowground_match]
+
+## change in soil C at plot scale
+C_agg$soilC<-belowground$soilC_diff_plot[belowground_match]
+
+## total soil C at scale
+C_agg$soilC_pool<-belowground$soilC_pool_plot[belowground_match]
+
+## soil C overyielding
 C_agg$soilOY<-belowground_sub$soil_OY[match(C_agg$plot,belowground_sub$Plot)]
-C_agg$rootC<-belowground$rootC[match(C_agg$plot,belowground$Plot)]
+
+## root C and overyielding and plot scale
+C_agg$rootC<-belowground$rootC[belowground_match]
 C_agg$rootOY<-belowground_sub$root_OY[match(C_agg$plot,belowground_sub$Plot)]
+
+## adding together AG wood, soil, and roots
 C_agg$totalC<-C_agg$woodyC+C_agg$soilC+C_agg$rootC
 C_agg$totalOY<-C_agg$woodyOY+C_agg$soilOY+C_agg$rootOY
-C_agg$macro250<-belowground$X..Mass.of.250[match(C_agg$plot,belowground$Plot)]
-C_agg$percentAM<-belowground$X..AM.trees[match(C_agg$plot,belowground$Plot)]
-C_agg$percentCon<-belowground$X..con[match(C_agg$plot,belowground$Plot)]
 
-C_agg$soilN<-belowground$soilN_diff_plot[match(C_agg$plot,belowground$Plot)]
+## macroaggregates
+C_agg$macro250<-belowground$X..Mass.of.250[belowground_match]
+
+## soil moisture
+C_agg$soil_moisture<-belowground$Soil.moisture[belowground_match]
+
+## planted proportions of AM and coniferous trees
+C_agg$percentAM<-belowground$X..AM.trees[belowground_match]
+C_agg$percentCon<-belowground$X..con[belowground_match]
+
+## change in soil N
+C_agg$soilN<-belowground$soilN_diff_plot[belowground_match]
+
+## log (root C/AG woody C)
 C_agg$logBA<-log(C_agg$rootC/C_agg$woodyC)
+
+## functional and phylogenetic diversity
+FD<-read.csv("OriginalData/ecy1958-sup-0003-tables1.csv")
+C_agg$PSV<-FD$PSV[match(C_agg$plot,FD$Plot)]
+C_agg$FDis<-FD$FDis[match(C_agg$plot,FD$Plot)]
+
+## optional step to set PSV to 0 in monocultures
+C_agg$PSV[C_agg$species_richness==1]<-0
+
+write.csv(C_agg,"ProcessedData/Cseq.csv",row.names = F)
 
 #############################
 ## plot monoculture biomass
@@ -262,18 +299,6 @@ ggplot(C_agg,aes(x=soilC,y=woodyC))+
   labs(x=expression("Soil C accrual (kg plot"^-1*")"),
        y=expression("Wood C (kg plot"^-1*")"))
 dev.off()
-
-#############################
-## add functional and phylogenetic diversity
-
-FD<-read.csv("OriginalData/ecy1958-sup-0003-tables1.csv")
-C_agg$PSV<-FD$PSV[match(C_agg$plot,FD$Plot)]
-C_agg$FDis<-FD$FDis[match(C_agg$plot,FD$Plot)]
-
-## optional step to set PSV to 0 in monocultures
-C_agg$PSV[C_agg$species_richness==1]<-0
-
-write.csv(C_agg,"ProcessedData/Cseq.csv",row.names = F)
 
 #############################
 ## AIC-based model selection for predictors of C stocks and OY
