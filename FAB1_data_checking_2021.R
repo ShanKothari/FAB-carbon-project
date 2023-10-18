@@ -1,4 +1,4 @@
-setwd("C:/Users/kotha020/Dropbox/FABCarbonProject/")
+setwd("C:/Users/querc/Dropbox/FABCarbonProject/")
 FAB_CL<-read.csv("OriginalData/fab1_growth_CL.csv")
 
 with(FAB_CL,which(height_2018>250 & diameter_2018<22 & species_code=="BEPA"))
