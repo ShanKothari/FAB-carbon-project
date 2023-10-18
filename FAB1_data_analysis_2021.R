@@ -96,6 +96,22 @@ C_partition<-addpart(C_estimate~sp_comp/species_code+plot,
 # ## for a plot, sp richness*covp(mono.means,deltaRY) is selection
 # ## and sp richness*mean(mono.means)*mean(deltaRY) is complementarity
 
+#############################
+## light data from 2018 (just for context)
+
+ground_light<-read.csv("OriginalData/ground_light_processed_2018.csv",
+                       fileEncoding="latin1")
+
+ground_light$Annotation<-gsub(pattern="PLOT",
+                              replacement="",
+                              x=ground_light$Annotation)
+ground_light$Annotation<-gsub(pattern="SK",
+                              replacement="",
+                              x=ground_light$Annotation)
+
+C_agg$ground_light_2018<-ground_light$Tau....[match(C_agg$plot,
+                                               ground_light$Annotation)]
+
 ############################
 ## belowground C
 
@@ -117,8 +133,9 @@ belowground$BD[belowground$block==1]<-mean(BD_wide$BD[BD_wide$block==1])
 belowground$BD[belowground$block==2]<-mean(BD_wide$BD[BD_wide$block==2])
 belowground$BD[belowground$block==3]<-mean(BD_wide$BD[BD_wide$block==3])
 
-## estimate accumulation of soil carbon -- first take the difference in percent
-## assumes bulk density remains unchanged
+## estimate accumulation of soil carbon
+## first take the difference in percent
+## (which assumes bulk density remains unchanged)
 belowground$soilC_diff<-belowground$X..C_2019-belowground$X.C_2013
 belowground$soilN_diff<-belowground$X..N_2019-belowground$X.N_2013
 ## to g C accumulated / cm^3 soil
@@ -166,8 +183,8 @@ belowground$mono_root_exp<-tot_mono_root_exp$mono_root_exp[match(belowground$Plo
 belowground$root_OY<-belowground$rootC-belowground$mono_root_exp
 
 belowground_sub<-belowground[-which(belowground$Sp.Richness==1),]
-plot(belowground_sub$soil_OY~belowground_sub$Sp.Richness)
-plot(belowground_sub$root_OY~belowground_sub$Sp.Richness)
+# plot(belowground_sub$soil_OY~belowground_sub$Sp.Richness)
+# plot(belowground_sub$root_OY~belowground_sub$Sp.Richness)
 
 ###############################
 ## combine
@@ -181,6 +198,7 @@ C_agg$woodySE<-C_partition$SE.C_estimate[match(C_agg$plot,C_partition$plot)]
 
 ## percentages of soil C and N
 belowground_match<-match(C_agg$plot,belowground$Plot)
+C_agg$perC_init<-belowground$X.C_2013[belowground_match]
 C_agg$perC<-belowground$X..C_2019[belowground_match]
 C_agg$perN<-belowground$X..N_2019[belowground_match]
 
@@ -208,8 +226,9 @@ C_agg$macro250<-belowground$X..Mass.of.250[belowground_match]
 C_agg$soil_moisture<-belowground$Soil.moisture[belowground_match]
 
 ## planted proportions of AM and coniferous trees
-C_agg$percentAM<-belowground$X..AM.trees[belowground_match]
-C_agg$percentCon<-belowground$X..con[belowground_match]
+FAB_planted<-read.csv("ProcessedData/sp_planting.csv")
+C_agg$percentAM<-FAB_planted$percentAM[match(C_agg$plot,FAB_planted$plot)]
+C_agg$percentCon<-FAB_planted$percentCon[match(C_agg$plot,FAB_planted$plot)]
 
 ## change in soil N
 C_agg$soilN<-belowground$soilN_diff_plot[belowground_match]
@@ -222,10 +241,32 @@ FD<-read.csv("OriginalData/ecy1958-sup-0003-tables1.csv")
 C_agg$PSV<-FD$PSV[match(C_agg$plot,FD$Plot)]
 C_agg$FDis<-FD$FDis[match(C_agg$plot,FD$Plot)]
 
+## leaf type and mycotype
+## the 0.97 here is for plot 147, which has one Tilia in it
+## (by mistake)
+C_agg$mycotype<-ifelse(C_agg$percentAM==0,"E",
+                       ifelse(C_agg$percentAM>0.97,"A","B"))
+C_agg$leaf_type<-ifelse(C_agg$percentCon==0,"D",
+                        ifelse(C_agg$percentCon==1,"C","B"))
+
 ## optional step to set PSV to 0 in monocultures
 C_agg$PSV[C_agg$species_richness==1]<-0
 
 write.csv(C_agg,"ProcessedData/Cseq.csv",row.names = F)
+
+##############################
+## simple light analyses
+
+C_agg$BEPA<-FAB_planted$BEPA[match(C_agg$plot,FAB_planted$plot)]
+
+quantile(C_agg$ground_light_2018[C_agg$leaf_type=="C"],
+         probs=c(0.1,0.5,0.9),na.rm=T)
+quantile(C_agg$ground_light_2018[C_agg$leaf_type=="B"],
+         probs=c(0.1,0.5,0.9),na.rm=T)
+quantile(C_agg$ground_light_2018[C_agg$leaf_type=="D" & C_agg$BEPA>0],
+         probs=c(0.1,0.5,0.9),na.rm=T)
+quantile(C_agg$ground_light_2018[C_agg$leaf_type=="D" & is.na(C_agg$BEPA)],
+         probs=c(0.1,0.5,0.9),na.rm=T)
 
 #############################
 ## plot monoculture biomass
@@ -323,6 +364,12 @@ AIC(mwt5)
 AIC(mwt6)
 AIC(mwt7)
 
+options(na.action = "na.fail") # Required for dredge to run
+mwt_dredge <- dredge(mwt7, beta = "none", evaluate = T, rank = AICc)
+summary(model.avg(mwt_dredge, subset = delta <= 2))
+options(na.action = "na.omit")
+
+## here block random intercept yields singular fit
 mw_null<-lm(woodyOY~1,data=C_agg)
 mw1<-lm(woodyOY~species_richness,data=C_agg)
 mw2<-lm(woodyOY~FDis,data=C_agg)
@@ -330,7 +377,11 @@ mw3<-lm(woodyOY~PSV,data=C_agg)
 mw4<-lm(woodyOY~species_richness+FDis,data=C_agg)
 mw5<-lm(woodyOY~species_richness+PSV,data=C_agg)
 mw6<-lm(woodyOY~FDis+PSV,data=C_agg)
-mw7<-lm(woodyOY~species_richness+FDis+PSV,data=C_agg)
+
+C_agg_woodyOY<-C_agg[which(!is.na(C_agg$woodyOY)),]
+mw7<-lm(woodyOY~species_richness+FDis+PSV,
+        data=C_agg_woodyOY)
+
 AIC(mw_null)
 AIC(mw1)
 AIC(mw2)
@@ -339,6 +390,12 @@ AIC(mw4)
 AIC(mw5)
 AIC(mw6)
 AIC(mw7)
+
+options(na.action = "na.fail") # Required for dredge to run
+mw_dredge <- dredge(mw7, beta = "none", evaluate = T, rank = AICc)
+summary(model.avg(mw_dredge, subset = delta <= 2))
+options(na.action = "na.omit")
+
 
 mce_null<-lm(woodyCE~1,data=C_agg)
 mce1<-lm(woodyCE~species_richness,data=C_agg)
