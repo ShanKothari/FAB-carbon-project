@@ -381,30 +381,3 @@ FABdata$C_content<-wood_df$C_content[match(FABdata$species_code,wood_df$species_
 FABdata$C_estimate<-FABdata$biomass_estimate*FABdata$C_content
 
 write.csv(FABdata,"ProcessedData/FAB_Cestimate.csv")
-
-######################################
-## percent of each species in each plot
-
-FABdata$replaced[which(FABdata$individual_id=="QUAL-2015-1904")]<-"Yes"
-FABdata_sub<-FABdata[which(FABdata$replaced=="No"),]
-
-FABdata_sub$dummy<-1
-FABdata_agg<-aggregate(dummy~plot+species_code,
-                       data=FABdata_sub,
-                       FUN=sum)
-
-FABdata_agg$proportion<-FABdata_agg$dummy/64
-FABdata_agg$dummy<-NULL
-FABdata_planted<-reshape(FABdata_agg,
-                         idvar = "plot",
-                         timevar = "species_code",
-                         direction = "wide")
-
-colnames(FABdata_planted)<-gsub(pattern="proportion.",
-                                replacement="",
-                                x=colnames(FABdata_planted))
-
-FABdata_planted$percentAM<-rowSums(FABdata_planted[,c("ACNE","ACRU","JUVI")],na.rm=T)
-FABdata_planted$percentCon<-rowSums(FABdata_planted[,c("JUVI","PIBA","PIRE","PIST")],na.rm=T)
-
-write.csv(FABdata_planted,"ProcessedData/sp_planting.csv",row.names = F)
