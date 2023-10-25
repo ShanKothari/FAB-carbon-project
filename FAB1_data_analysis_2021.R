@@ -4,11 +4,16 @@ library(reshape2)
 library(ggplot2)
 library(ggpubr)
 library(pdiv) ## Pascal Niklaus's pdiv package
+library(lme4)
+library(lmerTest)
+library(MuMIn)
+library(car)
+library(performance)
 
 FABdata<-read.csv("ProcessedData/FAB_Cestimate.csv")
 
 ## aggregate aboveground woody carbon by plot
-C_agg<-aggregate(FABdata$C_estimate,by=list(FABdata$plot),FUN=sum,na.rm=T)
+C_agg<-aggregate(C_estimate*10000/16~plot,data=FABdata,FUN=sum,na.rm=T)
 colnames(C_agg)<-c("plot","woodyC")
 ## these plots aren't actually surveyed
 C_agg<-C_agg[-which(C_agg$plot %in% c(112,119)),]
@@ -35,7 +40,7 @@ FABdata$mono.means<-apply(FABdata,1,
                           })
 FABdata$ind.OY<-FABdata$C_estimate-FABdata$mono.means
 
-OY.agg<-aggregate(ind.OY~plot,data=FABdata,FUN=sum)
+OY.agg<-aggregate(ind.OY*10000/16~plot,data=FABdata,FUN=sum)
 OY.agg$species_richness<-plot_guide$Treatment[match(OY.agg$plot,plot_guide$Plot)]
 OY.agg$block<-plot_guide$Block[match(OY.agg$plot,plot_guide$Plot)]
 OY.agg<-OY.agg[-which(OY.agg$species_richness==1),]
@@ -56,7 +61,7 @@ FABplot_list<-split(FABdata_mod,f = FABdata_mod$plot)
 FABplot_comp<-unlist(lapply(FABplot_list,function(plot) paste(unique(plot$species_code),collapse="|")))
 
 ## get estimates of total woody carbon per species per plot
-C_sp_plot<-aggregate(C_estimate~species_code+plot+block,
+C_sp_plot<-aggregate(C_estimate*10000/16~species_code+plot+block,
                      data=FABdata_mod,
                      FUN=sum)
 ## add composition indicators
@@ -95,6 +100,23 @@ C_partition<-addpart(C_estimate~sp_comp/species_code+plot,
 # 
 # ## for a plot, sp richness*covp(mono.means,deltaRY) is selection
 # ## and sp richness*mean(mono.means)*mean(deltaRY) is complementarity
+
+#############################
+## proportions of each species planted
+
+counts$fulcrum_id<-NULL
+FAB_planted<-reshape(counts,
+                         idvar = "plot",
+                         timevar = "species_code",
+                         direction = "wide")
+
+colnames(FAB_planted)<-gsub(pattern="fractions.",
+                                replacement="",
+                                x=colnames(FAB_planted))
+
+FAB_planted[which(is.na(FAB_planted),arr.ind=T)]<-0
+FAB_planted$percentAM<-rowSums(FAB_planted[,c("ACNE","ACRU","JUVI")],na.rm=T)
+FAB_planted$percentCon<-rowSums(FAB_planted[,c("JUVI","PIBA","PIRE","PIST")],na.rm=T)
 
 #############################
 ## light data from 2018 (just for context)
@@ -141,17 +163,18 @@ belowground$soilN_diff<-belowground$X..N_2019-belowground$X.N_2013
 ## to g C accumulated / cm^3 soil
 belowground$soilC_diff_vol<-belowground$soilC_diff/100*belowground$BD
 belowground$soilN_diff_vol<-belowground$soilN_diff/100*belowground$BD
-## 200000 cm^3 per m^2 sampled, 16 m^2 per plot, 1000 g per kg
-belowground$soilC_diff_plot<-belowground$soilC_diff_vol*200000*16/1000
-belowground$soilN_diff_plot<-belowground$soilN_diff_vol*200000*16/1000
+## 200000 cm^3 per m^2 sampled, 10000 m^2 per ha, 1000 g per kg
+belowground$soilC_diff_plot<-belowground$soilC_diff_vol*200000*10000/1000
+belowground$soilN_diff_plot<-belowground$soilN_diff_vol*200000*10000/1000
 
 ## soil C pool (not change)
 belowground$soilC_pool_vol<-belowground$X..C_2019/100*belowground$BD
-belowground$soilC_pool_plot<-belowground$soilC_pool_vol*200000*16/1000
+belowground$soilC_pool_plot<-belowground$soilC_pool_vol*200000*10000/1000
 
 ## root carbon, assuming roots are 50% carbon
 ## sampled from 2 in diameter root cores, 5 cores per plot
-belowground$rootC<-belowground$Roots.Dry.Mass/(5*2.54^2*pi)*10000*16*0.5/1000
+## 10000 cm2 to m2, 10000 m2 per ha, 1/1000 kg per g
+belowground$rootC<-belowground$Roots.Dry.Mass/(5*2.54^2*pi)*10000*10000*0.5/1000
 ## these plots weren't actually sampled
 belowground$rootC[belowground$Plot %in% c(60,76,96,114)]<-NA
 
@@ -166,6 +189,7 @@ sp_comp_long$mono_soil<-unlist(apply(sp_comp_long,1,function(x) {
   mono_block<-which(sp_comp_long$value>0.99 & sp_comp_long$variable==x["variable"] & sp_comp_long$block==x["block"])
   return(sp_comp_long$soilC_diff_plot[mono_block])
 }))
+
 sp_comp_long$mono_root<-unlist(apply(sp_comp_long,1,function(x) {
   mono_block<-which(sp_comp_long$value>0.99 & sp_comp_long$variable==x["variable"] & sp_comp_long$block==x["block"])
   return(sp_comp_long$rootC[mono_block])
@@ -226,7 +250,6 @@ C_agg$macro250<-belowground$X..Mass.of.250[belowground_match]
 C_agg$soil_moisture<-belowground$Soil.moisture[belowground_match]
 
 ## planted proportions of AM and coniferous trees
-FAB_planted<-read.csv("ProcessedData/sp_planting.csv")
 C_agg$percentAM<-FAB_planted$percentAM[match(C_agg$plot,FAB_planted$plot)]
 C_agg$percentCon<-FAB_planted$percentCon[match(C_agg$plot,FAB_planted$plot)]
 
@@ -347,184 +370,112 @@ dev.off()
 library(lme4)
 library(lmerTest)
 
-mwt_null<-lm(woodyC~1,data=C_agg)
-mwt1<-lm(woodyC~species_richness,data=C_agg)
-mwt2<-lm(woodyC~FDis,data=C_agg)
-mwt3<-lm(woodyC~PSV,data=C_agg)
-mwt4<-lm(woodyC~species_richness+FDis,data=C_agg)
-mwt5<-lm(woodyC~species_richness+PSV,data=C_agg)
-mwt6<-lm(woodyC~FDis+PSV,data=C_agg)
-mwt7<-lm(woodyC~species_richness+FDis+PSV,data=C_agg)
-AIC(mwt_null)
-AIC(mwt1)
-AIC(mwt2)
-AIC(mwt3)
-AIC(mwt4)
-AIC(mwt5)
-AIC(mwt6)
-AIC(mwt7)
+####
+## total woody C
+mwt<-lm(woodyC~species_richness+FDis+PSV,data=C_agg)
+mwt_block<-lmer(woodyC~species_richness+FDis+PSV+(1|block),
+                data=C_agg, REML=F)
+mwt_robust<-rlm(woodyC~species_richness+FDis+PSV,data=C_agg)
 
-options(na.action = "na.fail") # Required for dredge to run
-mwt_dredge <- dredge(mwt7, beta = "none", evaluate = T, rank = AICc)
-summary(model.avg(mwt_dredge, subset = delta <= 2))
+options(na.action = "na.fail") # required for dredge to run
+mwt_dredge <- dredge(mwt,beta = "none",evaluate = T, rank = AICc)
+mwt_block_dredge <- dredge(mwt_block,beta = "none",evaluate = T,rank = AICc)
+#summary(model.avg(mwt_dredge, subset = delta <= 2))
 options(na.action = "na.omit")
 
-## here block random intercept yields singular fit
-mw_null<-lm(woodyOY~1,data=C_agg)
-mw1<-lm(woodyOY~species_richness,data=C_agg)
-mw2<-lm(woodyOY~FDis,data=C_agg)
-mw3<-lm(woodyOY~PSV,data=C_agg)
-mw4<-lm(woodyOY~species_richness+FDis,data=C_agg)
-mw5<-lm(woodyOY~species_richness+PSV,data=C_agg)
-mw6<-lm(woodyOY~FDis+PSV,data=C_agg)
-
+####
+## woody C overyielding
 C_agg_woodyOY<-C_agg[which(!is.na(C_agg$woodyOY)),]
-mw7<-lm(woodyOY~species_richness+FDis+PSV,
-        data=C_agg_woodyOY)
+mw<-lm(woodyOY~species_richness+FDis+PSV,
+       data=C_agg_woodyOY)
+mw_block<-lmer(woodyOY~species_richness+FDis+PSV+(1|block),
+               data=C_agg_woodyOY,REML=F)
 
-AIC(mw_null)
-AIC(mw1)
-AIC(mw2)
-AIC(mw3)
-AIC(mw4)
-AIC(mw5)
-AIC(mw6)
-AIC(mw7)
-
-options(na.action = "na.fail") # Required for dredge to run
-mw_dredge <- dredge(mw7, beta = "none", evaluate = T, rank = AICc)
-summary(model.avg(mw_dredge, subset = delta <= 2))
+options(na.action = "na.fail")
+mw_dredge <- dredge(mw, beta = "none", evaluate = T, rank = AICc)
+mw_block_dredge <- dredge(mw_block, beta = "none", evaluate = T, rank = AICc)
 options(na.action = "na.omit")
 
+####
+## complementarity effects
+mce<-lm(woodyCE~species_richness+FDis+PSV,data=C_agg_woodyOY)
+mce_block<-lmer(woodyCE~species_richness+FDis+PSV+(1|block),
+                data=C_agg_woodyOY, REML=F)
 
-mce_null<-lm(woodyCE~1,data=C_agg)
-mce1<-lm(woodyCE~species_richness,data=C_agg)
-mce2<-lm(woodyCE~FDis,data=C_agg)
-mce3<-lm(woodyCE~PSV,data=C_agg)
-mce4<-lm(woodyCE~species_richness+FDis,data=C_agg)
-mce5<-lm(woodyCE~species_richness+PSV,data=C_agg)
-mce6<-lm(woodyCE~FDis+PSV,data=C_agg)
-mce7<-lm(woodyCE~species_richness+FDis+PSV,data=C_agg)
-AIC(mce_null)
-AIC(mce1)
-AIC(mce2)
-AIC(mce3)
-AIC(mce4)
-AIC(mce5)
-AIC(mce6)
-AIC(mce7)
+options(na.action = "na.fail")
+mce_dredge <- dredge(mce, beta = "none", evaluate = T, rank = AICc)
+mce_block_dredge <- dredge(mce_block, beta = "none", evaluate = T, rank = AICc)
+options(na.action = "na.omit")
 
-mse_null<-lm(woodySE~1,data=C_agg)
-mse1<-lm(woodySE~species_richness,data=C_agg)
-mse2<-lm(woodySE~FDis,data=C_agg)
-mse3<-lm(woodySE~PSV,data=C_agg)
-mse4<-lm(woodySE~species_richness+FDis,data=C_agg)
-mse5<-lm(woodySE~species_richness+PSV,data=C_agg)
-mse6<-lm(woodySE~FDis+PSV,data=C_agg)
-mse7<-lm(woodySE~species_richness+FDis+PSV,data=C_agg)
-AIC(mse_null)
-AIC(mse1)
-AIC(mse2)
-AIC(mse3)
-AIC(mse4)
-AIC(mse5)
-AIC(mse6)
-AIC(mse7)
+####
+## selection effects
+mse<-lm(woodySE~species_richness+FDis+PSV,data=C_agg_woodyOY)
+mse_block<-lmer(woodySE~species_richness+FDis+PSV+(1|block),
+                data=C_agg_woodyOY,REML=F)
 
-mst_null<-lm(soilC~1,data=C_agg)
-mst1<-lm(soilC~species_richness,data=C_agg)
-mst2<-lm(soilC~FDis,data=C_agg)
-mst3<-lm(soilC~PSV,data=C_agg)
-mst4<-lm(soilC~species_richness+FDis,data=C_agg)
-mst5<-lm(soilC~species_richness+PSV,data=C_agg)
-mst6<-lm(soilC~FDis+PSV,data=C_agg)
-mst7<-lm(soilC~species_richness+FDis+PSV,data=C_agg)
-AIC(mst_null)
-AIC(mst1)
-AIC(mst2)
-AIC(mst3)
-AIC(mst4)
-AIC(mst5)
-AIC(mst6)
-AIC(mst7)
+options(na.action = "na.fail")
+mse_dredge <- dredge(mse, beta = "none", evaluate = T, rank = AICc)
+mse_block_dredge <- dredge(mse_block, beta = "none", evaluate = T, rank = AICc)
+options(na.action = "na.omit")
 
-ms_null<-lm(soilOY~1,data=C_agg)
-ms1<-lm(soilOY~species_richness,data=C_agg)
-ms2<-lm(soilOY~FDis,data=C_agg)
-ms3<-lm(soilOY~PSV,data=C_agg)
-ms4<-lm(soilOY~species_richness+FDis,data=C_agg)
-ms5<-lm(soilOY~species_richness+PSV,data=C_agg)
-ms6<-lm(soilOY~FDis+PSV,data=C_agg)
-ms7<-lm(soilOY~species_richness+FDis+PSV,data=C_agg)
-AIC(ms_null)
-AIC(ms1)
-AIC(ms2)
-AIC(ms3)
-AIC(ms4)
-AIC(ms5)
-AIC(ms6)
-AIC(ms7)
+####
+## total change in soil C
+C_agg_soilC<-C_agg[which(!is.na(C_agg$soilC)),]
+mst<-lm(soilC~species_richness+FDis+PSV,data=C_agg_soilC)
+mst_block<-lmer(soilC~species_richness+FDis+PSV+(1|block),
+                data=C_agg_soilC,REML=F)
 
-mrt_null<-lm(rootC~1,data=C_agg)
-mrt1<-lm(rootC~species_richness,data=C_agg)
-mrt2<-lm(rootC~FDis,data=C_agg)
-mrt3<-lm(rootC~PSV,data=C_agg)
-mrt4<-lm(rootC~species_richness+FDis,data=C_agg)
-mrt5<-lm(rootC~species_richness+PSV,data=C_agg)
-mrt6<-lm(rootC~FDis+PSV,data=C_agg)
-mrt7<-lm(rootC~species_richness+FDis+PSV,data=C_agg)
-AIC(mrt_null)
-AIC(mrt1)
-AIC(mrt2)
-AIC(mrt3)
-AIC(mrt4)
-AIC(mrt5)
-AIC(mrt6)
-AIC(mrt7)
+options(na.action = "na.fail")
+mst_dredge <- dredge(mst, beta = "none", evaluate = T, rank = AICc)
+mst_block_dredge <- dredge(mst_block, beta = "none", evaluate = T, rank = AICc)
+options(na.action = "na.omit")
 
-mr_null<-lm(rootOY~1,data=C_agg)
-mr1<-lm(rootOY~species_richness,data=C_agg)
-mr2<-lm(rootOY~FDis,data=C_agg)
-mr3<-lm(rootOY~PSV,data=C_agg)
-mr4<-lm(rootOY~species_richness+FDis,data=C_agg)
-mr5<-lm(rootOY~species_richness+PSV,data=C_agg)
-mr6<-lm(rootOY~FDis+PSV,data=C_agg)
-mr7<-lm(rootOY~species_richness+FDis+PSV,data=C_agg)
-AIC(mr_null)
-AIC(mr1)
-AIC(mr2)
-AIC(mr3)
-AIC(mr4)
-AIC(mr5)
-AIC(mr6)
-AIC(mr7)
+####
+## overyielding in (change in) soil C
+C_agg_soilOY<-C_agg[which(!is.na(C_agg$soilOY)),]
+ms<-lm(soilOY~species_richness+FDis+PSV,data=C_agg_soilOY)
+ms_block<-lmer(soilOY~species_richness+FDis+PSV+(1|block),
+               data=C_agg_soilOY,REML=F)
 
-mma_null<-lm(macro250~1,data=C_agg)
-mma1<-lm(macro250~species_richness,data=C_agg)
-mma2<-lm(macro250~FDis,data=C_agg)
-mma3<-lm(macro250~PSV,data=C_agg)
-mma4<-lm(macro250~species_richness+FDis,data=C_agg)
-mma5<-lm(macro250~species_richness+PSV,data=C_agg)
-mma6<-lm(macro250~FDis+PSV,data=C_agg)
-mma7<-lm(macro250~species_richness+FDis+PSV,data=C_agg)
-AIC(mma_null)
-AIC(mma1)
-AIC(mma2)
-AIC(mma3)
-AIC(mma4)
-AIC(mma5)
-AIC(mma6)
-AIC(mma7)
+options(na.action = "na.fail")
+ms_dredge <- dredge(ms, beta = "none", evaluate = T, rank = AICc)
+ms_block_dredge <- dredge(ms_block, beta = "none", evaluate = T, rank = AICc)
+options(na.action = "na.omit")
 
-###############################################
-## putting C into a nicer form for Craig
+####
+## total fine root C
+C_agg_rootC<-C_agg[which(!is.na(C_agg$rootC)),]
+mrt<-lm(rootC~species_richness+FDis+PSV,data=C_agg_rootC)
+mrt_block<-lmer(rootC~species_richness+FDis+PSV+(1|block),
+                data=C_agg_rootC,REML=F)
 
-C_ha<-data.frame(plot=C_agg$plot,
-                 richness=C_agg$species_richness,
-                 woodyC=C_agg$woodyC*10000/16,
-                 rootC=C_agg$rootC*10000/16,
-                 soilC=C_agg$soilC*10000/16)
-C_ha$composition<-FABplot_comp[match(C_ha$plot,names(FABplot_comp))]
-# C_ha<-C_ha[C_ha$richness==1,]
+options(na.action = "na.fail")
+mrt_dredge <- dredge(mrt, beta = "none", evaluate = T, rank = AICc)
+mrt_block_dredge <- dredge(mrt_block, beta = "none", evaluate = T, rank = AICc)
+options(na.action = "na.omit")
 
-write.csv(C_ha,"ProcessedData/C_composition.csv")
+####
+## overyielding in fine root C
+C_agg_rootOY<-C_agg[which(!is.na(C_agg$rootOY)),]
+mr<-lm(rootOY~species_richness+FDis+PSV,data=C_agg_rootOY)
+mr_block<-lmer(rootC~species_richness+FDis+PSV+(1|block),
+                data=C_agg_rootOY,REML=F)
+
+options(na.action = "na.fail")
+mr_dredge <- dredge(mr, beta = "none", evaluate = T, rank = AICc)
+mr_block_dredge <- dredge(mr_block, beta = "none", evaluate = T, rank = AICc)
+options(na.action = "na.omit")
+
+####
+## macroaggregates
+## we add block here because it seems to consistently
+## improve models + change parameter estimates
+C_agg_macro<-C_agg[which(!is.na(C_agg$macro250)),]
+mma<-lm(macro250~species_richness+FDis+PSV,data=C_agg_macro)
+mma_block<-lmer(macro250~species_richness+FDis+PSV+(1|block),
+                data=C_agg_macro,REML=F)
+
+options(na.action = "na.fail")
+mma_dredge <- dredge(mma, beta = "none", evaluate = T, rank = AICc)
+mma_block_dredge <- dredge(mma_block, beta = "none", evaluate = T, rank = AICc)
+options(na.action = "na.omit")
