@@ -13,9 +13,9 @@ library(performance)
 FABdata<-read.csv("ProcessedData/FAB_Cestimate.csv")
 
 ## aggregate aboveground woody carbon by plot
-## *10000/16 changes units from per plot to per hectare
+## *10000/(16*1000) changes units from kg per plot to Mg per hectare
 C_agg<-aggregate(C_estimate~plot,data=FABdata,
-                 FUN=function(x) sum(x,na.rm=T)*10000/16)
+                 FUN=function(x) sum(x,na.rm=T)*10/16)
 colnames(C_agg)<-c("plot","woodyC")
 
 plot_guide<-read.csv("OriginalData/plotkey_biomass.csv")
@@ -41,7 +41,7 @@ FABdata$mono.means<-apply(FABdata,1,
 FABdata$ind.OY<-FABdata$C_estimate-FABdata$mono.means
 
 OY.agg<-aggregate(ind.OY~plot,data=FABdata,
-                  FUN=function(x) sum(x,na.rm=T)*10000/16)
+                  FUN=function(x) sum(x,na.rm=T)*10/16)
 OY.agg$species_richness<-plot_guide$Treatment[match(OY.agg$plot,plot_guide$Plot)]
 OY.agg$block<-plot_guide$Block[match(OY.agg$plot,plot_guide$Plot)]
 OY.agg<-OY.agg[-which(OY.agg$species_richness==1),]
@@ -63,7 +63,7 @@ FABplot_comp<-unlist(lapply(FABplot_list,function(plot) paste(unique(plot$specie
 
 ## get estimates of total woody carbon per species per plot
 C_sp_plot<-aggregate(C_estimate~species_code+plot+block,
-                     data=FABdata_mod, FUN=function(x) sum(x)*10000/16)
+                     data=FABdata_mod, FUN=function(x) sum(x)*10/16)
 ## add composition indicators
 C_sp_plot$sp_comp<-FABplot_comp[match(C_sp_plot$plot,names(FABplot_comp))]
 
@@ -163,18 +163,18 @@ belowground$soilN_diff<-belowground$X..N_2019-belowground$X.N_2013
 ## to g C accumulated / cm^3 soil
 belowground$soilC_diff_vol<-belowground$soilC_diff/100*belowground$BD
 belowground$soilN_diff_vol<-belowground$soilN_diff/100*belowground$BD
-## 200000 cm^3 per m^2 sampled, 10000 m^2 per ha, 1000 g per kg
-belowground$soilC_diff_plot<-belowground$soilC_diff_vol*200000*10000/1000
-belowground$soilN_diff_plot<-belowground$soilN_diff_vol*200000*10000/1000
+## 200000 cm^3 per m^2 sampled, 10000 m^2 per ha, 1000000 g per Mg
+belowground$soilC_diff_plot<-belowground$soilC_diff_vol*200000*10000/1000000
+belowground$soilN_diff_plot<-belowground$soilN_diff_vol*200000*10000/1000000
 
-## soil C pool (not change)
+## soil C pool at the end (not change)
 belowground$soilC_pool_vol<-belowground$X..C_2019/100*belowground$BD
-belowground$soilC_pool_plot<-belowground$soilC_pool_vol*200000*10000/1000
+belowground$soilC_pool_plot<-belowground$soilC_pool_vol*200000*10000/1000000
 
 ## root carbon, assuming roots are 50% carbon
 ## sampled from 2 in diameter root cores, 5 cores per plot
-## 10000 cm2 to m2, 10000 m2 per ha, 1/1000 kg per g
-belowground$rootC<-belowground$Roots.Dry.Mass/(5*2.54^2*pi)*10000*10000*0.5/1000
+## 10000 cm2 to m2, 10000 m2 per ha, 1/1000000 Mg per g
+belowground$rootC<-belowground$Roots.Dry.Mass/(5*2.54^2*pi)*10000*10000*0.5/1000000
 ## these plots weren't actually sampled
 belowground$rootC[belowground$Plot %in% c(60,76,96,114)]<-NA
 
