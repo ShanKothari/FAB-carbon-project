@@ -13,10 +13,10 @@ library(performance)
 FABdata<-read.csv("ProcessedData/FAB_Cestimate.csv")
 
 ## aggregate aboveground woody carbon by plot
-C_agg<-aggregate(C_estimate*10000/16~plot,data=FABdata,FUN=sum,na.rm=T)
+## *10000/16 changes units from per plot to per hectare
+C_agg<-aggregate(C_estimate~plot,data=FABdata,
+                 FUN=function(x) sum(x,na.rm=T)*10000/16)
 colnames(C_agg)<-c("plot","woodyC")
-## these plots aren't actually surveyed
-C_agg<-C_agg[-which(C_agg$plot %in% c(112,119)),]
 
 plot_guide<-read.csv("OriginalData/plotkey_biomass.csv")
 C_agg$species_richness<-plot_guide$Treatment[match(C_agg$plot,plot_guide$Plot)]
@@ -40,7 +40,8 @@ FABdata$mono.means<-apply(FABdata,1,
                           })
 FABdata$ind.OY<-FABdata$C_estimate-FABdata$mono.means
 
-OY.agg<-aggregate(ind.OY*10000/16~plot,data=FABdata,FUN=sum)
+OY.agg<-aggregate(ind.OY~plot,data=FABdata,
+                  FUN=function(x) sum(x,na.rm=T)*10000/16)
 OY.agg$species_richness<-plot_guide$Treatment[match(OY.agg$plot,plot_guide$Plot)]
 OY.agg$block<-plot_guide$Block[match(OY.agg$plot,plot_guide$Plot)]
 OY.agg<-OY.agg[-which(OY.agg$species_richness==1),]
@@ -61,9 +62,8 @@ FABplot_list<-split(FABdata_mod,f = FABdata_mod$plot)
 FABplot_comp<-unlist(lapply(FABplot_list,function(plot) paste(unique(plot$species_code),collapse="|")))
 
 ## get estimates of total woody carbon per species per plot
-C_sp_plot<-aggregate(C_estimate*10000/16~species_code+plot+block,
-                     data=FABdata_mod,
-                     FUN=sum)
+C_sp_plot<-aggregate(C_estimate~species_code+plot+block,
+                     data=FABdata_mod, FUN=function(x) sum(x)*10000/16)
 ## add composition indicators
 C_sp_plot$sp_comp<-FABplot_comp[match(C_sp_plot$plot,names(FABplot_comp))]
 
