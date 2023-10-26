@@ -380,8 +380,14 @@ mwt_robust<-rlm(woodyC~species_richness+FDis+PSV,data=C_agg)
 options(na.action = "na.fail") # required for dredge to run
 mwt_dredge <- dredge(mwt,beta = "none",evaluate = T, rank = AICc)
 mwt_block_dredge <- dredge(mwt_block,beta = "none",evaluate = T,rank = AICc)
+mwt_robust_dredge <- dredge(mwt_robust,beta = "none",evaluate = T,rank = AICc)
 #summary(model.avg(mwt_dredge, subset = delta <= 2))
 options(na.action = "na.omit")
+
+mwt_model<-get.models(mwt_dredge, subset = 2)[[1]]
+## high heteroskedasticity, non-normality of variance
+## but robust regression yields similar results
+## check_model(mwt_model)
 
 ####
 ## woody C overyielding
@@ -390,33 +396,48 @@ mw<-lm(woodyOY~species_richness+FDis+PSV,
        data=C_agg_woodyOY)
 mw_block<-lmer(woodyOY~species_richness+FDis+PSV+(1|block),
                data=C_agg_woodyOY,REML=F)
+mw_robust<-rlm(woodyOY~species_richness+FDis+PSV,data=C_agg_woodyOY)
 
 options(na.action = "na.fail")
 mw_dredge <- dredge(mw, beta = "none", evaluate = T, rank = AICc)
 mw_block_dredge <- dredge(mw_block, beta = "none", evaluate = T, rank = AICc)
+mw_robust_dredge <- dredge(mw_robust, beta = "none", evaluate = T, rank = AICc)
 options(na.action = "na.omit")
+
+mw_model<-get.models(mw_dredge, subset = 1)[[1]]
+check_model(mw_model)
 
 ####
 ## complementarity effects
 mce<-lm(woodyCE~species_richness+FDis+PSV,data=C_agg_woodyOY)
 mce_block<-lmer(woodyCE~species_richness+FDis+PSV+(1|block),
                 data=C_agg_woodyOY, REML=F)
+mce_robust<-rlm(woodyCE~species_richness+FDis+PSV,data=C_agg_woodyOY)
 
 options(na.action = "na.fail")
 mce_dredge <- dredge(mce, beta = "none", evaluate = T, rank = AICc)
 mce_block_dredge <- dredge(mce_block, beta = "none", evaluate = T, rank = AICc)
+mce_robust_dredge <- dredge(mce_robust, beta = "none", evaluate = T, rank = AICc)
 options(na.action = "na.omit")
+
+mce_model<-get.models(mce_dredge, subset = 2)[[1]]
+check_model(mce_model)
 
 ####
 ## selection effects
 mse<-lm(woodySE~species_richness+FDis+PSV,data=C_agg_woodyOY)
 mse_block<-lmer(woodySE~species_richness+FDis+PSV+(1|block),
                 data=C_agg_woodyOY,REML=F)
+mse_robust<-rlm(woodySE~species_richness+FDis+PSV,data=C_agg_woodyOY)
 
 options(na.action = "na.fail")
 mse_dredge <- dredge(mse, beta = "none", evaluate = T, rank = AICc)
 mse_block_dredge <- dredge(mse_block, beta = "none", evaluate = T, rank = AICc)
+mse_robust_dredge <- dredge(mse_robust, beta = "none", evaluate = T, rank = AICc)
 options(na.action = "na.omit")
+
+mse_model<-get.models(mse_dredge, subset = 1)[[1]]
+check_model(mse_model)
 
 ####
 ## total change in soil C
@@ -430,6 +451,9 @@ mst_dredge <- dredge(mst, beta = "none", evaluate = T, rank = AICc)
 mst_block_dredge <- dredge(mst_block, beta = "none", evaluate = T, rank = AICc)
 options(na.action = "na.omit")
 
+mst_model<-get.models(mst_dredge, subset = 1)[[1]]
+check_model(mst_model)
+
 ####
 ## overyielding in (change in) soil C
 C_agg_soilOY<-C_agg[which(!is.na(C_agg$soilOY)),]
@@ -441,6 +465,10 @@ options(na.action = "na.fail")
 ms_dredge <- dredge(ms, beta = "none", evaluate = T, rank = AICc)
 ms_block_dredge <- dredge(ms_block, beta = "none", evaluate = T, rank = AICc)
 options(na.action = "na.omit")
+
+## the 'selected' model is actually the second
+ms_model<-get.models(ms_dredge, subset = 1)[[1]]
+check_model(ms_model)
 
 ####
 ## total fine root C
@@ -454,6 +482,10 @@ mrt_dredge <- dredge(mrt, beta = "none", evaluate = T, rank = AICc)
 mrt_block_dredge <- dredge(mrt_block, beta = "none", evaluate = T, rank = AICc)
 options(na.action = "na.omit")
 
+## the 'selected' model is actually the second
+mrt_model<-get.models(mrt_dredge, subset = 1)[[1]]
+check_model(mrt_model)
+
 ####
 ## overyielding in fine root C
 C_agg_rootOY<-C_agg[which(!is.na(C_agg$rootOY)),]
@@ -465,6 +497,9 @@ options(na.action = "na.fail")
 mr_dredge <- dredge(mr, beta = "none", evaluate = T, rank = AICc)
 mr_block_dredge <- dredge(mr_block, beta = "none", evaluate = T, rank = AICc)
 options(na.action = "na.omit")
+
+mr_model<-get.models(mr_dredge, subset = 1)[[1]]
+check_model(mr_model)
 
 ####
 ## macroaggregates
@@ -479,3 +514,6 @@ options(na.action = "na.fail")
 mma_dredge <- dredge(mma, beta = "none", evaluate = T, rank = AICc)
 mma_block_dredge <- dredge(mma_block, beta = "none", evaluate = T, rank = AICc)
 options(na.action = "na.omit")
+
+mma_model<-get.models(mma_block_dredge, subset = 1)[[1]]
+check_model(mma_model)
