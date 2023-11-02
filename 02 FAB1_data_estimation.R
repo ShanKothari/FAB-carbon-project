@@ -119,6 +119,7 @@ for(i in 1:nrow(FABdata)){
     stem_bark<-0.0080*(FABdata$dbh_2019[i]/10)^1.9754*(FABdata$height_2019[i]/100)^0.6659
     branch<-0.0257*(FABdata$dbh_2019[i]/10)^3.1754*(FABdata$height_2019[i]/100)^-0.9417
     FABdata$biomass_estimate[i]<-stem_wood+stem_bark+branch
+    
     BEPAdensity<-wood_df$density[wood_df$species_code=="BEPA"]
     if(is.na(FABdata$dbh_2019[i]) || FABdata$dbh_2019[i] < 15 || FABdata$height_2019[i] < 260){
       FABdata$biomass_estimate[i]<-(1/3*FABdata$height_2019[i]*(FABdata$diameter_2019_inf_dbh[i]/20)^2*pi*BEPAdensity)/1000
@@ -129,6 +130,7 @@ for(i in 1:nrow(FABdata)){
     stem_bark<-0.0377*(FABdata$dbh_2019[i]/10)^1.6064
     branch<-0.0254*(FABdata$dbh_2019[i]/10)^2.2884
     FABdata$biomass_estimate[i]<-stem_wood+stem_bark+branch
+    
     JUVIdensity<-wood_df$density[wood_df$species_code=="JUVI"]
     if(is.na(FABdata$dbh_2019[i]) || FABdata$dbh_2019[i] < 20 || FABdata$height_2019[i] < 270){
       FABdata$biomass_estimate[i]<-(1/3*FABdata$height_2019[i]*(FABdata$diameter_2019_inf_dbh[i]/20)^2*pi*JUVIdensity)/1000
@@ -139,6 +141,7 @@ for(i in 1:nrow(FABdata)){
     stem_bark<-0.0141*(FABdata$dbh_2019[i]/10)^1.5994*(FABdata$height_2019[i]/100)^0.5957
     branch<-0.0185*(FABdata$dbh_2019[i]/10)^3.0584*(FABdata$height_2019[i]/100)^-0.9816
     FABdata$biomass_estimate[i]<-stem_wood+stem_bark+branch
+    
     PIBAdensity<-wood_df$density[wood_df$species_code=="PIBA"]
     if(is.na(FABdata$dbh_2019[i]) || FABdata$dbh_2019[i] < 17 || FABdata$height_2019[i] < 290){
       FABdata$biomass_estimate[i]<-(1/3*FABdata$height_2019[i]*(FABdata$diameter_2019_inf_dbh[i]/20)^2*pi*PIBAdensity)/1000
@@ -149,6 +152,7 @@ for(i in 1:nrow(FABdata)){
     stem_bark<-0.0188*(FABdata$dbh_2019[i]/10)^2.0527
     branch<-0.0033*(FABdata$dbh_2019[i]/10)^2.7515
     FABdata$biomass_estimate[i]<-stem_wood+stem_bark+branch
+    
     PIREdensity<-wood_df$density[wood_df$species_code=="PIRE"]
     if(is.na(FABdata$dbh_2019[i]) || FABdata$dbh_2019[i] < 13 || FABdata$height_2019[i] < 180){
       FABdata$biomass_estimate[i]<-(1/3*FABdata$height_2019[i]*(FABdata$diameter_2019_inf_dbh[i]/20)^2*pi*PIREdensity)/1000
@@ -159,45 +163,18 @@ for(i in 1:nrow(FABdata)){
     stem_bark<-0.0192*(FABdata$dbh_2019[i]/10)^2.2038
     branch<-0.0056*(FABdata$dbh_2019[i]/10)^2.6011
     FABdata$biomass_estimate[i]<-stem_wood+stem_bark+branch
+    
     PISTdensity<-wood_df$density[wood_df$species_code=="PIST"]
     if(is.na(FABdata$dbh_2019[i]) || FABdata$dbh_2019[i] < 15 || FABdata$height_2019[i] < 230){
       FABdata$biomass_estimate[i]<-(1/3*FABdata$height_2019[i]*(FABdata$diameter_2019_inf_dbh[i]/20)^2*pi*PISTdensity)/1000
     }
   }
+  
   if(FABdata$species_code[i] %in% c("ACNE","ACRU","QUAL","QUEL","QUMA","QURU","TIAM")){
     sp_density<-wood_df$density[which(wood_df$species_code==FABdata$species_code[i])]
     FABdata$biomass_estimate[i]<-(1/3*FABdata$height_2019[i]*(FABdata$diameter_2019_inf_dbh[i]/20)^2*pi*sp_density)/1000
   }
 }
-
-## purely hardwood vs. softwood
-# FABdata$biomass_estimate<-NA
-# for(i in 1:nrow(FABdata)){
-#   ## Lambert equations
-#   if(FABdata$species_code[i] %in% c("JUVI","PIBA","PIRE","PIST")){
-#     # stem_wood<-0.0284*(FABdata$dbh_2019[i]/10)^1.6894*(FABdata$height_2019[i]/100)^1.0857
-#     # stem_bark<-0.0100*(FABdata$dbh_2019[i]/10)^1.8463*(FABdata$height_2019[i]/100)^0.5616
-#     # branch<-0.0301*(FABdata$dbh_2019[i]/10)^3.0038*(FABdata$height_2019[i]/100)^-1.0520
-#     stem_wood<-0.0648*(FABdata$dbh_2019[i]/10)^2.3927
-#     stem_bark<-0.0162*(FABdata$dbh_2019[i]/10)^2.1959
-#     branch<-0.0156*(FABdata$dbh_2019[i]/10)^2.2916
-#     FABdata$biomass_estimate[i]<-stem_wood+stem_bark+branch
-#     density<-wood_df$density[wood_df$species_code==FABdata$species_code[i]]
-#     if(is.na(FABdata$dbh_2019[i]) || FABdata$dbh_2019[i] < 13 || FABdata$height_2019[i] < 180){
-#       FABdata$biomass_estimate[i]<-(1/3*FABdata$height_2019[i]*(FABdata$diameter_2019_inf[i]/20)^2*pi*density)/1000
-#     }
-#   }
-#   if(FABdata$species_code[i] %in% c("ACNE","ACRU","BEPA","QUAL","QUEL","QUMA","QURU","TIAM")){
-#     stem_wood<-0.0359*(FABdata$dbh_2019[i]/10)^2.0263*(FABdata$height_2019[i]/100)^0.6987
-#     stem_bark<-0.0094*(FABdata$dbh_2019[i]/10)^1.8677*(FABdata$height_2019[i]/100)^0.6985
-#     branch<-0.0433*(FABdata$dbh_2019[i]/10)^2.6817*(FABdata$height_2019[i]/100)^-0.5731
-#     FABdata$biomass_estimate[i]<-stem_wood+stem_bark+branch
-#     density<-wood_df$density[which(wood_df$species_code==FABdata$species_code[i])]
-#     if(is.na(FABdata$dbh_2019[i]) || FABdata$dbh_2019[i] < 11 || FABdata$height_2019[i] < 250){
-#       FABdata$biomass_estimate[i]<-(1/3*FABdata$height_2019[i]*(FABdata$diameter_2019_inf[i]/20)^2*pi*density)/1000
-#     }
-#   }
-# }
 
 ## fill in estimated carbon using species specific wood carbon concentration
 FABdata$C_content<-wood_df$C_content[match(FABdata$species_code,wood_df$species_code)]
