@@ -184,4 +184,4 @@ FAB_CL$height_2019[FAB_CL$position==6545]<-211 ## off by a meter?
 #############################
 ## write data
 
-write.csv(FAB_CL,"ProcessedData/FAB_edited.csv",row.names = F)
+write.csv(FAB_CL,"ProcessedData/FAB_cleaned.csv",row.names = F)

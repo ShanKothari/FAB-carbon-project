@@ -2,7 +2,7 @@ setwd("C:/Users/querc/Dropbox/FABCarbonProject/")
 
 library(reshape2)
 
-FABdata<-read.csv("ProcessedData/FAB_edited.csv")
+FABdata<-read.csv("ProcessedData/FAB_cleaned.csv")
 
 ###########################
 ## estimation models
@@ -101,188 +101,6 @@ wood_df<-data.frame(species_code=species_code,
                     density=density,
                     C_content=C_content)
 
-##########################
-## allometric equations for BEPA, JUVI, PIBA, PIRE, PIST
-
-#######
-## BEPA
-
-## Fatemi PV
-# FABdata$BEPAestimate1<-NA
-# for(i in 1:nrow(FABdata)){
-# #  if(!is.numeric(FABdata$dbh_2019[i])){FABdata$BEPAestimate1[i]<-NA}
-#   PV<-0.5*pi*(FABdata$dbh_2019[i]/20)^2*FABdata$height_2019[i]
-#   stem_wood<- 10^(-0.753+1.096*log10(PV))
-#   stem_bark<- 10^(-1.627+1.010*log10(PV))
-#   FABdata$BEPAestimate1[i]<-(stem_wood+stem_bark)/1000
-#   if((is.na(FABdata$dbh_2019[i]) || FABdata$dbh_2019[i] < 20) & !is.na(FABdata$diameter_2019[i])){
-#     FABdata$BEPAestimate1[i]<-(PV*BEPAdensity)/1000
-#   }
-#   if(FABdata$species_code[i]!="BEPA"){FABdata$BEPAestimate1[i]<-NA}
-# }
-
-## Fatemi DBH
-# FABdata$BEPAestimate1X<-NA
-# for(i in 1:nrow(FABdata)){
-#   #  if(!is.numeric(FABdata$dbh_2019[i])){FABdata$BEPAestimate1X[i]<-NA}
-#   stem_wood<- 10^(1.739+2.638*log10(FABdata$dbh_2019[i]/10))
-#   stem_bark<- 10^(0.823+2.711*log10(FABdata$dbh_2019[i]/10))
-#   FABdata$BEPAestimate1X[i]<-(stem_wood+stem_bark)/1000
-#   if((is.na(FABdata$dbh_2019[i]) || FABdata$dbh_2019[i] < 20) & !is.na(FABdata$diameter_2019[i])){
-#     FABdata$BEPAestimate1X[i]<-(0.5*pi*(FABdata$diameter_2019[i]/20)^2*FABdata$height_2019[i]*BEPAdensity)/1000
-#   }
-#   if(FABdata$species_code[i]!="BEPA"){FABdata$BEPAestimate1X[i]<-NA}
-# }
-
-## Lambert
-FABdata$BEPAestimate2<-NA
-for(i in 1:nrow(FABdata)){
-  #  if(!is.numeric(FABdata$dbh_2019[i])){FABdata$BEPAestimate2[i]<-NA}
-  stem_wood<-0.0338*(FABdata$dbh_2019[i]/10)^2.0702*(FABdata$height_2019[i]/100)^0.6876
-  stem_bark<-0.0080*(FABdata$dbh_2019[i]/10)^1.9754*(FABdata$height_2019[i]/100)^0.6659
-  branch<-0.0257*(FABdata$dbh_2019[i]/10)^3.1754*(FABdata$height_2019[i]/100)^-0.9417
-  FABdata$BEPAestimate2[i]<-stem_wood+stem_bark+branch
-  BEPAdensity<-wood_df$density[wood_df$species_code=="BEPA"]
-  if(is.na(FABdata$dbh_2019[i]) || FABdata$dbh_2019[i] < 15 || FABdata$height_2019[i] < 260){
-    FABdata$BEPAestimate2[i]<-(1/3*FABdata$height_2019[i]*(FABdata$diameter_2019_inf_dbh[i]/20)^2*pi*BEPAdensity)/1000
-  }
-  if(FABdata$species_code[i]!="BEPA"){FABdata$BEPAestimate2[i]<-NA}
-}
-
-## Ter-Mikaelian 1997 -- Ker 1984
-# FABdata$BEPAestimate3<-NA
-# for(i in 1:nrow(FABdata)){
-#   #  if(!is.numeric(FABdata$dbh_2019[i])){FABdata$BEPAestimate3[i]<-NA}
-#   FABdata$BEPAestimate3[i]<-0.0847*(FABdata$dbh_2019[i]/10)^2.4029
-#   if(is.na(FABdata$dbh_2019[i]) & !is.na(FABdata$diameter_2019[i])){
-#     FABdata$BEPAestimate3[i]<-(1/3*FABdata$height_2019[i]*(FABdata$diameter_2019[i]/20)^2*pi*BEPAdensity)/1000
-#   }
-#   if(FABdata$species_code[i]!="BEPA"){FABdata$BEPAestimate3[i]<-NA}
-# }
-# 
-# ## Ter-Mikaelian 1997 -- Schmitt and Grigal
-# FABdata$BEPAestimate4<-NA
-# for(i in 1:nrow(FABdata)){
-#   #  if(!is.numeric(FABdata$dbh_2019[i])){FABdata$BEPAestimate4[i]<-NA}
-#   FABdata$BEPAestimate4[i]<-0.0923*(FABdata$dbh_2019[i]/10)^2.4800
-#   if(is.na(FABdata$dbh_2019[i]) & !is.na(FABdata$diameter_2019[i])){
-#     FABdata$BEPAestimate4[i]<-(1/3*FABdata$height_2019[i]*(FABdata$diameter_2019[i]/20)^2*pi*BEPAdensity)/1000
-#   }
-#   if(FABdata$species_code[i]!="BEPA"){FABdata$BEPAestimate4[i]<-NA}
-# }
-
-#######
-## JUVI
-
-## Lambert
-FABdata$JUVIestimate1<-NA
-for(i in 1:nrow(FABdata)){
-  #  if(!is.numeric(FABdata$dbh_2019[i])){FABdata$JUVIestimate1[i]<-NA}
-  stem_wood<-0.1277*(FABdata$dbh_2019[i]/10)^1.9778
-  stem_bark<-0.0377*(FABdata$dbh_2019[i]/10)^1.6064
-  branch<-0.0254*(FABdata$dbh_2019[i]/10)^2.2884
-  FABdata$JUVIestimate1[i]<-stem_wood+stem_bark+branch
-  JUVIdensity<-wood_df$density[wood_df$species_code=="JUVI"]
-  if(is.na(FABdata$dbh_2019[i]) || FABdata$dbh_2019[i] < 20 || FABdata$height_2019[i] < 270){
-    FABdata$JUVIestimate1[i]<-(1/3*FABdata$height_2019[i]*(FABdata$diameter_2019_inf_dbh[i]/20)^2*pi*JUVIdensity)/1000
-  }
-  if(FABdata$species_code[i]!="JUVI"){FABdata$JUVIestimate1[i]<-NA}
-}
-
-#######
-## PIBA
-
-# ## Ter-Mikaelian 1997 -- Ker 1984
-# FABdata$PIBAestimate1<-NA
-# for(i in 1:nrow(FABdata)){
-#   #  if(!is.numeric(FABdata$dbh_2019[i])){FABdata$PIBAestimate1[i]<-NA}
-#   FABdata$PIBAestimate1[i]<-0.1470*(FABdata$dbh_2019[i]/10)^2.1673
-#   if(is.na(FABdata$dbh_2019[i]) & !is.na(FABdata$diameter_2019[i])){
-#     FABdata$PIBAestimate1[i]<-(1/3*FABdata$height_2019[i]*(FABdata$diameter_2019[i]/20)^2*pi*PIBAdensity)/1000
-#   }
-#   if(FABdata$species_code[i]!="PIBA"){FABdata$PIBAestimate1[i]<-NA}
-# }
-
-## Lambert
-FABdata$PIBAestimate2<-NA
-for(i in 1:nrow(FABdata)){
-  #  if(!is.numeric(FABdata$dbh_2019[i])){FABdata$PIBAestimate2[i]<-NA}
-  stem_wood<-0.0199*(FABdata$dbh_2019[i]/10)^1.6883*(FABdata$height_2019[i]/100)^1.2456
-  stem_bark<-0.0141*(FABdata$dbh_2019[i]/10)^1.5994*(FABdata$height_2019[i]/100)^0.5957
-  branch<-0.0185*(FABdata$dbh_2019[i]/10)^3.0584*(FABdata$height_2019[i]/100)^-0.9816
-  FABdata$PIBAestimate2[i]<-stem_wood+stem_bark+branch
-  PIBAdensity<-wood_df$density[wood_df$species_code=="PIBA"]
-  if(is.na(FABdata$dbh_2019[i]) || FABdata$dbh_2019[i] < 17 || FABdata$height_2019[i] < 290){
-    FABdata$PIBAestimate2[i]<-(1/3*FABdata$height_2019[i]*(FABdata$diameter_2019_inf_dbh[i]/20)^2*pi*PIBAdensity)/1000
-  }
-  if(FABdata$species_code[i]!="PIBA"){FABdata$PIBAestimate2[i]<-NA}
-}
-
-#######
-## PIRE
-
-# ## Ter-Mikaelian 1997 -- Ker 1980
-# ## seems like it overestimates
-# FABdata$PIREestimate1<-NA
-# for(i in 1:nrow(FABdata)){
-#   #  if(!is.numeric(FABdata$dbh_2019[i])){FABdata$PIREestimate1[i]<-NA}
-#   FABdata$PIREestimate1[i]<-0.0586*(FABdata$dbh_2019[i]/10)^2.3892
-#   if(is.na(FABdata$dbh_2019[i]) & !is.na(FABdata$diameter_2019[i])){
-#     FABdata$PIREestimate1[i]<-(1/3*FABdata$height_2019[i]*(FABdata$diameter_2019[i]/20)^2*pi*PIREdensity)/1000
-#   }
-#   if(FABdata$species_code[i]!="PIRE"){FABdata$PIREestimate1[i]<-NA}
-# }
-
-## Lambert
-FABdata$PIREestimate2<-NA
-for(i in 1:nrow(FABdata)){
-  #  if(!is.numeric(FABdata$dbh_2019[i])){FABdata$PIREestimate2[i]<-NA}
-  # stem_wood<-0.0106*(FABdata$dbh_2019[i]/10)^1.7725*(FABdata$height_2019[i]/100)^1.3285
-  # stem_bark<-0.0277*(FABdata$dbh_2019[i]/10)^1.5192*(FABdata$height_2019[i]/100)^0.4645
-  # branch<-0.0125*(FABdata$dbh_2019[i]/10)^3.3865*(FABdata$height_2019[i]/100)^-1.1939
-  stem_wood<-0.0564*(FABdata$dbh_2019[i]/10)^2.4465
-  stem_bark<-0.0188*(FABdata$dbh_2019[i]/10)^2.0527
-  branch<-0.0033*(FABdata$dbh_2019[i]/10)^2.7515
-  FABdata$PIREestimate2[i]<-stem_wood+stem_bark+branch
-  PIREdensity<-wood_df$density[wood_df$species_code=="PIRE"]
-  if(is.na(FABdata$dbh_2019[i]) || FABdata$dbh_2019[i] < 13 || FABdata$height_2019[i] < 180){
-    FABdata$PIREestimate2[i]<-(1/3*FABdata$height_2019[i]*(FABdata$diameter_2019_inf_dbh[i]/20)^2*pi*PIREdensity)/1000
-  }
-  if(FABdata$species_code[i]!="PIRE"){FABdata$PIREestimate2[i]<-NA}
-}
-
-#######
-## PIST
-
-## Ter-Mikaelian 1997 -- Ker 1980
-# FABdata$PISTestimate1<-NA
-# for(i in 1:nrow(FABdata)){
-#   #  if(!is.numeric(FABdata$dbh_2019[i])){FABdata$PISTestimate1[i]<-NA}
-#   FABdata$PISTestimate1[i]<-0.0414*(FABdata$dbh_2019[i]/10)^2.5360
-#   if(is.na(FABdata$dbh_2019[i]) & !is.na(FABdata$diameter_2019[i])){
-#     FABdata$PISTestimate1[i]<-(1/3*FABdata$height_2019[i]*(FABdata$diameter_2019[i]/20)^2*pi*PISTdensity)/1000
-#   }
-#   if(FABdata$species_code[i]!="PIST"){FABdata$PISTestimate1[i]<-NA}
-# }
-
-## Lambert
-FABdata$PISTestimate2<-NA
-for(i in 1:nrow(FABdata)){
-  #  if(!is.numeric(FABdata$dbh_2019[i])){FABdata$PISTestimate2[i]<-NA}
-  # stem_wood<-0.0170*(FABdata$dbh_2019[i]/10)^1.7779*(FABdata$height_2019[i]/100)^1.1370
-  # stem_bark<-0.0069*(FABdata$dbh_2019[i]/10)^1.6589*(FABdata$height_2019[i]/100)^0.9582
-  # branch<-0.0184*(FABdata$dbh_2019[i]/10)^3.1968*(FABdata$height_2019[i]/100)^-1.0876
-  stem_wood<-0.0997*(FABdata$dbh_2019[i]/10)^2.2709
-  stem_bark<-0.0192*(FABdata$dbh_2019[i]/10)^2.2038
-  branch<-0.0056*(FABdata$dbh_2019[i]/10)^2.6011
-  FABdata$PISTestimate2[i]<-stem_wood+stem_bark+branch
-  PISTdensity<-wood_df$density[wood_df$species_code=="PIST"]
-  if(is.na(FABdata$dbh_2019[i]) || FABdata$dbh_2019[i] < 15 || FABdata$height_2019[i] < 230){
-    FABdata$PISTestimate2[i]<-(1/3*FABdata$height_2019[i]*(FABdata$diameter_2019_inf_dbh[i]/20)^2*pi*PISTdensity)/1000
-  }
-  if(FABdata$species_code[i]!="PIST"){FABdata$PISTestimate2[i]<-NA}
-}
-
 ####################
 ## all together now
 ## can change diameter_2019_inf to diameter_2019_inf_dbh
@@ -290,7 +108,12 @@ for(i in 1:nrow(FABdata)){
 
 FABdata$biomass_estimate<-NA
 for(i in 1:nrow(FABdata)){
-  ## Lambert equations
+  
+  ## Lambert's allometric equations for BEPA, JUVI, PIBA, PIRE, PIST
+  ## previous versions of this script on GitHub include various intercomparisons
+  ## of allometric equations to test which are the most consistent
+  ## I've removed those for readability
+  
   if(FABdata$species_code[i]=="BEPA"){
     stem_wood<-0.0338*(FABdata$dbh_2019[i]/10)^2.0702*(FABdata$height_2019[i]/100)^0.6876
     stem_bark<-0.0080*(FABdata$dbh_2019[i]/10)^1.9754*(FABdata$height_2019[i]/100)^0.6659
