@@ -1,3 +1,6 @@
+## this script represents my best attempt at
+## cleaning the FAB survey data 
+
 #######################################
 ## biomass estimates from 2019 data
 

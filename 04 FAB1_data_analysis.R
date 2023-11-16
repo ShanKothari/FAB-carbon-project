@@ -10,6 +10,7 @@ library(performance)
 library(lavaan)
 library(tidySEM)
 library(piecewiseSEM)
+library(MASS)
 
 C_agg<-read.csv("ProcessedData/Cseq.csv")
 
@@ -69,6 +70,13 @@ options(na.action = "na.omit")
 mce_model<-get.models(mce_dredge, subset = 2)[[1]]
 check_model(mce_model)
 
+## because of persistent disputes about the meaningfulness
+## of the magnitudes of CE and SE, we might just want
+## to see whether they differ from 0
+## we can also get rid of the biggest outlier
+
+t.test(C_agg_woodyOY$woodyCE[-which(C_agg_woodyOY$plot==50)],)
+
 ####
 ## selection effects
 mse<-lm(woodySE~species_richness+FDis+PSV,data=C_agg_woodyOY)
@@ -84,6 +92,13 @@ options(na.action = "na.omit")
 
 mse_model<-get.models(mse_dredge, subset = 1)[[1]]
 check_model(mse_model)
+
+## because of persistent disputes about the meaningfulness
+## of the magnitudes of CE and SE, we might just want
+## to see whether they differ from 0
+## we can also get rid of the biggest outlier
+
+t.test(C_agg_woodyOY$woodySE[-which(C_agg_woodyOY$plot==50)],)
 
 ####
 ## total change in soil C

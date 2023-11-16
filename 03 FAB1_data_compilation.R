@@ -5,7 +5,17 @@ library(pdiv) ## Pascal Niklaus's pdiv package
 
 FABdata<-read.csv("ProcessedData/FAB_Cestimate.csv")
 
+###################################
+## examine mortality rates across plots
+
+FABsub<-FABdata[which(FABdata$deadmissing_2019=="No"),]
+max((64-table(FABsub$plot))/64)
+min((64-table(FABsub$plot))/64)
+median((64-table(FABsub$plot))/64)
+
+####################################
 ## aggregate aboveground woody carbon by plot
+
 ## *10000/(16*1000) changes units from kg per plot to Mg per hectare
 C_agg<-aggregate(C_estimate~plot,data=FABdata,
                  FUN=function(x) sum(x,na.rm=T)*10/16)
