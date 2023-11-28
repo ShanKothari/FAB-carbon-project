@@ -177,6 +177,7 @@ for(i in 1:nrow(FABdata)){
     }
   }
   
+  ## these species generally fall short of Lambert et al's size thresholds
   if(FABdata$species_code[i] %in% c("ACNE","ACRU","QUAL","QUEL","QUMA","QURU","TIAM")){
     sp_density<-wood_df$density[which(wood_df$species_code==FABdata$species_code[i])]
     FABdata$biomass_estimate[i]<-(1/3*FABdata$height_2019[i]*(FABdata$diameter_2019_inf_dbh[i]/20)^2*pi*sp_density)/1000

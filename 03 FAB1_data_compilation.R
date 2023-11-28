@@ -5,13 +5,11 @@ library(pdiv) ## Pascal Niklaus's pdiv package
 
 FABdata<-read.csv("ProcessedData/FAB_Cestimate.csv")
 
-###################################
 ## examine mortality rates across plots
-
-FABsub<-FABdata[which(FABdata$deadmissing_2019=="No"),]
-max((64-table(FABsub$plot))/64)
-min((64-table(FABsub$plot))/64)
-median((64-table(FABsub$plot))/64)
+FABdata_alive<-FABdata[which(FABdata$deadmissing_2019=="No"),]
+# max((64-table(FABdata_alive$plot))/64)
+# min((64-table(FABdata_alive$plot))/64)
+# median((64-table(FABdata_alive$plot))/64)
 
 ####################################
 ## aggregate aboveground woody carbon by plot
@@ -21,6 +19,7 @@ C_agg<-aggregate(C_estimate~plot,data=FABdata,
                  FUN=function(x) sum(x,na.rm=T)*10/16)
 colnames(C_agg)<-c("plot","woodyC")
 
+## get the species richness and block for each plot
 plot_guide<-read.csv("OriginalData/plotkey_biomass.csv")
 C_agg$species_richness<-plot_guide$Treatment[match(C_agg$plot,plot_guide$Plot)]
 C_agg$block<-plot_guide$Block[match(C_agg$plot,plot_guide$Plot)]
@@ -28,12 +27,14 @@ C_agg$block<-plot_guide$Block[match(C_agg$plot,plot_guide$Plot)]
 ###################################################
 ## overyielding calculations
 
-## this is to make sure that dead trees are included as 0s for means,
-## but only up to one per position
+## this is to make sure that dead trees are included as 0s for means;
+## first we have to get rid of trees that were replaced during replanting
 FABdata<-FABdata[FABdata$surveyed_2019=="Yes",]
 FABdata$C_estimate[which(is.na(FABdata$C_estimate))]<-0
 
-## calculate overyielding matching to the monoculture of the same block
+## calculate individual overyielding by matching each
+## individual to the monoculture mean of the same species
+## in the same block
 mono.means<-aggregate(C_estimate~species_code+block,
                       data=FABdata[FABdata$species_richness==1,],
                       FUN=mean)
@@ -41,12 +42,16 @@ FABdata$mono.means<-apply(FABdata,1,
                           function(x) {
                             mono.means$C_estimate[mono.means$species_code==x["species_code"] & mono.means$block==x["block"]]
                           })
+## the amount by which the individual exceeds monoculture-based expectations
 FABdata$ind.OY<-FABdata$C_estimate-FABdata$mono.means
 
+## sum individual overyielding to the plot level
 OY.agg<-aggregate(ind.OY~plot,data=FABdata,
                   FUN=function(x) sum(x,na.rm=T)*10/16)
 OY.agg$species_richness<-plot_guide$Treatment[match(OY.agg$plot,plot_guide$Plot)]
 OY.agg$block<-plot_guide$Block[match(OY.agg$plot,plot_guide$Plot)]
+## overyielding should be 0 for monocultures (can be verified)
+## we then proceed to delete rows corresponding to monocultures
 OY.agg<-OY.agg[-which(OY.agg$species_richness==1),]
 
 ############################
@@ -60,14 +65,13 @@ replacement<-mean(FABdata_mod$C_estimate[FABdata_mod$species_code=="ACRU" & FABd
 FABdata_mod$C_estimate[FABdata_mod$species_code=="TIAM" & FABdata_mod$plot==147]<-replacement
 FABdata_mod$species_code[FABdata_mod$species_code=="TIAM" & FABdata_mod$plot==147]<-"ACRU"
 
-## generate indicators of species composition
-FABplot_list<-split(FABdata_mod,f = FABdata_mod$plot)
-FABplot_comp<-unlist(lapply(FABplot_list,function(plot) paste(unique(plot$species_code),collapse="|")))
-
 ## get estimates of total woody carbon per species per plot
 C_sp_plot<-aggregate(C_estimate~species_code+plot+block,
                      data=FABdata_mod, FUN=function(x) sum(x)*10/16)
-## add composition indicators
+
+## generate indicators of species composition
+FABplot_list<-split(FABdata_mod,f = FABdata_mod$plot)
+FABplot_comp<-unlist(lapply(FABplot_list,function(plot) paste(unique(plot$species_code),collapse="|")))
 C_sp_plot$sp_comp<-FABplot_comp[match(C_sp_plot$plot,names(FABplot_comp))]
 
 ## estimate fractions of each species in each plot
@@ -82,12 +86,13 @@ counts$fractions<-counts$fulcrum_id/64
 sum(counts$species_code==C_sp_plot$species_code & counts$plot==C_sp_plot$plot)
 C_sp_plot$fractions<-counts$fractions
 
+## now we use pdiv to carry out the additive partitioning
 C_partition<-addpart(C_estimate~sp_comp/species_code+plot,
                      fractions= ~fractions,
                      groups= ~block,
                      data=C_sp_plot)
 
-# ## trying calculations manually
+## pdiv's calculations can be verified manually
 # C_sp_plot$mono.means<-apply(C_sp_plot,1,
 #                             function(x) {
 #                               C_sp_plot$C_estimate[C_sp_plot$sp_comp==x["species_code"] & C_sp_plot$block==x["block"]]
@@ -105,7 +110,7 @@ C_partition<-addpart(C_estimate~sp_comp/species_code+plot,
 # ## and sp richness*mean(mono.means)*mean(deltaRY) is complementarity
 
 #############################
-## proportions of each species planted
+## calculate proportions of conifers and AM species planted
 
 counts$fulcrum_id<-NULL
 FAB_planted<-reshape(counts,
@@ -122,7 +127,7 @@ FAB_planted$percentAM<-rowSums(FAB_planted[,c("ACNE","ACRU","JUVI")],na.rm=T)
 FAB_planted$percentCon<-rowSums(FAB_planted[,c("JUVI","PIBA","PIRE","PIST")],na.rm=T)
 
 #############################
-## light data from 2018 (just for context)
+## add light data from 2018 (just for context)
 
 ground_light<-read.csv("OriginalData/ground_light_processed_2018.csv",
                        fileEncoding="latin1")

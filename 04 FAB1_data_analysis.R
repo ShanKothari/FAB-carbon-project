@@ -1,7 +1,5 @@
 setwd("C:/Users/querc/Dropbox/FABCarbonProject/")
 
-library(ggplot2)
-library(ggpubr)
 library(lme4)
 library(lmerTest)
 library(MuMIn)
