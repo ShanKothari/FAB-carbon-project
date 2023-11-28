@@ -1,10 +1,10 @@
 ## this script represents my best attempt at
-## cleaning the FAB survey data 
+## cleaning the FAB survey data
 
 #######################################
 ## biomass estimates from 2019 data
 
-setwd("C:/Users/kotha020/Dropbox/FABCarbonProject/")
+setwd("C:/Users/querc/Dropbox/FABCarbonProject/")
 FAB_CL<-read.csv("OriginalData/fab1_growth_CL.csv")
 
 ########################

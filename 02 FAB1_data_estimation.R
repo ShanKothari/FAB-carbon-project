@@ -2,11 +2,15 @@ setwd("C:/Users/querc/Dropbox/FABCarbonProject/")
 
 library(reshape2)
 
+## read in the cleaned FAB data
 FABdata<-read.csv("ProcessedData/FAB_cleaned.csv")
 
 ###########################
 ## estimation models
 
+## this next series of steps transforms the FAB data
+## such that each individual x year is a row with DBH,
+## basal diameter, and height among the columns
 FABsub<-FABdata[,c("individual_id","position","species_code",
                    "dbh_2016","dbh_2017","dbh_2018","dbh_2019","dbh_2020",
                    "diameter_2016","diameter_2017","diameter_2018","diameter_2019","diameter_2020",
@@ -21,12 +25,13 @@ FABmodel<-dcast(individual_id+position+species_code+year~variable,
                 data=FABsub_long,
                 fun.aggregate = mean)
 
-## infer basal diameter based on linear models that
-## predict it from dbh and height in the same year,
-## using all individual x years when all three were measured
-## NOTE: if basal diameter was measured in the year to be predicted,
-## this function will just return the measured value rather than
-## estimating it from the model
+## here, we fit species-specific linear models that predict
+## basal diameter based on dbh and height in the same year
+## among these individual x year observations
+
+## if basal diameter was measured for an individual x year,
+## this function will just return the measured value
+## otherwise it will return the model-estimated value
 infer.diam.dbh<-function(diameter_ind,dbh_ind,height_ind,species_code,df){
   if(is.na(height_ind)){
     return(NA)
@@ -41,17 +46,13 @@ infer.diam.dbh<-function(diameter_ind,dbh_ind,height_ind,species_code,df){
   return(predict(model,newdata=data.frame(dbh=dbh_ind,height=height_ind)))
 }
 
-## infer basal diameter based on linear models that
-## predict it from just height in the same year,
-## using all individual x years when all three were measured
+## this is the same as the above, but only using height
+## rather than height and DBH to predict basal diameter
+
 ## the models produced using this approach do kind of look nicer
 ## although that 'niceness' might be illusory, due solely
 ## to the presence of smaller individuals that anchor the
 ## lower end of the regressions
-
-## NOTE: if basal diameter was measured in the year to be predicted,
-## this function will just return the measured value rather than
-## estimating it from the model
 infer.diam<-function(diameter_ind,height_ind,species_code,df){
   if(is.na(height_ind)){
     return(NA)
@@ -63,15 +64,6 @@ infer.diam<-function(diameter_ind,height_ind,species_code,df){
   return(predict(model,newdata=data.frame(height=height_ind)))
 }
 
-## infer basal diameter using models that incorporate height only
-FABdata$diameter_2019_inf<-NA
-for(i in 1:nrow(FABdata)){
-  FABdata$diameter_2019_inf[i]<-with(FABdata,infer.diam(diameter_2019[i],
-                                                        height_2019[i],
-                                                        species_code[i],
-                                                        df=FABmodel))
-}
-
 ## infer basal diameter using models that incorporate height and DBH
 FABdata$diameter_2019_inf_dbh<-NA
 for(i in 1:nrow(FABdata)){
@@ -80,6 +72,15 @@ for(i in 1:nrow(FABdata)){
                                                                 height_2019[i],
                                                                 species_code[i],
                                                                 df=FABmodel))
+}
+
+## infer basal diameter using models that incorporate height only
+FABdata$diameter_2019_inf<-NA
+for(i in 1:nrow(FABdata)){
+  FABdata$diameter_2019_inf[i]<-with(FABdata,infer.diam(diameter_2019[i],
+                                                        height_2019[i],
+                                                        species_code[i],
+                                                        df=FABmodel))
 }
 
 ## calculate percent RMSD for models
