@@ -7,8 +7,6 @@ library(lmerTest)
 library(MuMIn)
 library(car)
 library(performance)
-library(lavaan)
-library(tidySEM)
 library(piecewiseSEM)
 library(MASS)
 
@@ -181,6 +179,7 @@ check_model(mma_model)
 
 #####################################
 ## structural equation models
+## here we use local estimation in piecewiseSEM
 
 ## drop rows with missing data
 C_agg_sub<-C_agg[-which(is.na(C_agg$soilC) | is.na(C_agg$macro250)),]
@@ -191,44 +190,16 @@ standard_cols<-c("species_richness","woodyC","soilC",
                  "macro250","percentAM","percentCon")
 C_agg_standard[,standard_cols]<-scale(C_agg_standard[,standard_cols])
 
-####
-## global estimation of SEMs
+## this was the original proposed model
+## before examining any SEM output
+localfit_orig_model<-psem(
+  lmer(woodyC~species_richness+percentCon+woodyC+(1|block),data=C_agg_standard),
+  lmer(macro250~percentAM+percentCon+woodyC+(1|block),data=C_agg_standard),
+  lm(soilC~species_richness+percentAM+woodyC+macro250+(1|block),
+     data=C_agg_standard)
+)
 
-full_model_lavaan<-'
-woodyC~1+species_richness+percentAM+percentCon
-macro250~1+percentAM+percentCon
-soilC~1+species_richness+percentAM+woodyC+macro250
-'
-
-fit_full_model <- sem(full_model_lavaan,
-                      data=C_agg_standard)
-# fitMeasures(fit_full_model)
-
-## factors that influence leaf litter quantity (woody C)
-## or quality (% needleleaf) don't seem to influence soil C
-sub_model_lavaan<-'
-woodyC~1+species_richness+percentAM+percentCon
-macro250~1+percentAM+percentCon
-soilC~1+species_richness+percentAM
-'
-
-fit_sub_model <- sem(sub_model_lavaan,
-                     data=C_agg_standard)
-# fitMeasures(fit_sub_model)
-
-min_model_lavaan<-'
-woodyC~1+species_richness+percentAM+percentCon
-macro250~1+percentCon
-soilC~1+species_richness+percentAM
-'
-
-fit_min_model <- sem(min_model_lavaan,
-                     data=C_agg_standard)
-# fitMeasures(fit_min_model)
-
-####
-## local estimation
-
+## a full model
 localfit_full_model<-psem(
   lmer(woodyC~species_richness+percentCon+percentAM+(1|block),data=C_agg_standard),
   lmer(macro250~percentAM+percentCon+(1|block),data=C_agg_standard),
@@ -242,6 +213,8 @@ localfit_full_model<-psem(
 # check_model(lm(soilC~species_richness+percentAM+woodyC+macro250,
 #                data=C_agg_standard))
 
+## factors that influence leaf litter quantity (woody C)
+## or quality (% needleleaf) don't seem to influence soil C
 localfit_sub_model<-psem(
   lmer(woodyC~species_richness+percentCon+percentAM+(1|block),data=C_agg_standard),
   lmer(macro250~percentAM+percentCon+(1|block),data=C_agg_standard),
