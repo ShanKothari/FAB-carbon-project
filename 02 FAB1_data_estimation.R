@@ -89,8 +89,8 @@ for(i in 1:nrow(FABdata)){
 # perRMSD<-sqrt(mean(lm(diameter~height,data=FABmodel[FABmodel$species_code=="TIAM",])$residuals^2))/(max-min)
 
 ##########################
-## wood density from Jenkins
-## carbon content from Lamlom and Savidge
+## create a table of wood density (from Jenkins)
+## and carbon content (from Lamlom and Savidge)
 
 species_code<-c("ACNE","ACRU","BEPA","JUVI","PIBA","PIRE",
             "PIST","QUAL","QUEL","QUMA","QURU","TIAM")
@@ -103,9 +103,12 @@ wood_df<-data.frame(species_code=species_code,
                     C_content=C_content)
 
 ####################
-## all together now
-## can change diameter_2019_inf to diameter_2019_inf_dbh
-## to switch to models that use both height and dbh
+## estimating biomass for all species
+
+## here we use the height-based estimates of unmeasured
+## basal diameter when needed, but we can change the variable
+## 'diameter_2019_inf' to 'diameter_2019_inf_dbh'
+## to switch to models that use both height and DBH
 
 FABdata$biomass_estimate<-NA
 for(i in 1:nrow(FABdata)){
@@ -113,7 +116,7 @@ for(i in 1:nrow(FABdata)){
   ## Lambert's allometric equations for BEPA, JUVI, PIBA, PIRE, PIST
   ## previous versions of this script on GitHub include various intercomparisons
   ## of allometric equations to test which are the most consistent
-  ## I've removed those for readability
+  ## I've removed those here for readability
   
   if(FABdata$species_code[i]=="BEPA"){
     stem_wood<-0.0338*(FABdata$dbh_2019[i]/10)^2.0702*(FABdata$height_2019[i]/100)^0.6876
@@ -122,6 +125,9 @@ for(i in 1:nrow(FABdata)){
     FABdata$biomass_estimate[i]<-stem_wood+stem_bark+branch
     
     BEPAdensity<-wood_df$density[wood_df$species_code=="BEPA"]
+    
+    ## for trees that fall short of Lambert et al's size thresholds
+    ## we calculate the conical volume and multiply it by wood density
     if(is.na(FABdata$dbh_2019[i]) || FABdata$dbh_2019[i] < 15 || FABdata$height_2019[i] < 260){
       FABdata$biomass_estimate[i]<-(1/3*FABdata$height_2019[i]*(FABdata$diameter_2019_inf_dbh[i]/20)^2*pi*BEPAdensity)/1000
     }
