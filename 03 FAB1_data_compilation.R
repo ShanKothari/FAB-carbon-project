@@ -146,12 +146,10 @@ C_agg$ground_light_2018<-ground_light$Tau....[match(C_agg$plot,
 ## belowground C
 
 belowground<-read.csv("OriginalData/FAB5 'FINAL' Data - Data.csv")
-belowground$above_C<-C_agg$woodyC[match(belowground$Plot,C_agg$plot)]
-belowground$aboveOY<-OY.agg$ind.OY[match(belowground$Plot,OY.agg$plot)]
-
 belowground$block<-plot_guide$Block[match(belowground$Plot,plot_guide$Plot)]
 
-## estimate bulk density per block
+## estimate bulk density based on block means
+## we calculate 0-20 cm as a weighted avg of 0-15 and 15-30
 BD<-read.csv("OriginalData/FAB_BD.csv")
 BD_wide<-dcast(Plot.ID~Depth,
                data=BD[,c("Plot.ID","Depth","Bulk.density.g.cm3")])
@@ -168,7 +166,7 @@ belowground$BD[belowground$block==3]<-mean(BD_wide$BD[BD_wide$block==3])
 ## (which assumes bulk density remains unchanged)
 belowground$soilC_diff<-belowground$X..C_2019-belowground$X.C_2013
 belowground$soilN_diff<-belowground$X..N_2019-belowground$X.N_2013
-## to g C accumulated / cm^3 soil
+## convert to g C accumulated / cm^3 soil using BD
 belowground$soilC_diff_vol<-belowground$soilC_diff/100*belowground$BD
 belowground$soilN_diff_vol<-belowground$soilN_diff/100*belowground$BD
 ## 200000 cm^3 per m^2 sampled, 10000 m^2 per ha, 1000000 g per Mg
@@ -179,7 +177,7 @@ belowground$soilN_diff_plot<-belowground$soilN_diff_vol*200000*10000/1000000
 belowground$soilC_pool_vol<-belowground$X..C_2019/100*belowground$BD
 belowground$soilC_pool_plot<-belowground$soilC_pool_vol*200000*10000/1000000
 
-## root carbon, assuming roots are 50% carbon
+## fine root carbon, assuming roots are 50% carbon
 ## sampled from 2 in diameter root cores, 5 cores per plot
 ## 10000 cm2 to m2, 10000 m2 per ha, 1/1000000 Mg per g
 belowground$rootC<-belowground$Roots.Dry.Mass/(5*2.54^2*pi)*10000*10000*0.5/1000000
@@ -192,7 +190,7 @@ sp_comp<-belowground[,c("Plot","Sp.Richness","block","soilC_diff_plot","rootC",
                         "QUEL","QUMA","QURU","TIAM")]
 sp_comp_long<-melt(sp_comp,id.vars = c("Plot","Sp.Richness","block","soilC_diff_plot","rootC"))
 
-## attach monoculture
+## attach monoculture values from the same species and block
 sp_comp_long$mono_soil<-unlist(apply(sp_comp_long,1,function(x) {
   mono_block<-which(sp_comp_long$value>0.99 & sp_comp_long$variable==x["variable"] & sp_comp_long$block==x["block"])
   return(sp_comp_long$soilC_diff_plot[mono_block])
@@ -203,12 +201,15 @@ sp_comp_long$mono_root<-unlist(apply(sp_comp_long,1,function(x) {
   return(sp_comp_long$rootC[mono_block])
 }))
 
+## multiply monoculture values by planted fractions of the species
 sp_comp_long$mono_soil_exp<-sp_comp_long$mono_soil*sp_comp_long$value
 sp_comp_long$mono_root_exp<-sp_comp_long$mono_root*sp_comp_long$value
 
+## and add together within plots to get plot-level expectations
 tot_mono_soil_exp<-aggregate(mono_soil_exp~Plot,data=sp_comp_long,FUN=sum)
 tot_mono_root_exp<-aggregate(mono_root_exp~Plot,data=sp_comp_long,FUN=sum)
 
+## subtract expectations from observed to get overyielding
 belowground$mono_soil_exp<-tot_mono_soil_exp$mono_soil_exp[match(belowground$Plot,tot_mono_soil_exp$Plot)]
 belowground$soil_OY<-belowground$soilC_diff_plot-belowground$mono_soil_exp
 belowground$mono_root_exp<-tot_mono_root_exp$mono_root_exp[match(belowground$Plot,tot_mono_root_exp$Plot)]
@@ -219,7 +220,7 @@ belowground_sub<-belowground[-which(belowground$Sp.Richness==1),]
 # plot(belowground_sub$root_OY~belowground_sub$Sp.Richness)
 
 ###############################
-## combine
+## combine all data
 
 C_agg$block<-plot_guide$Block[match(C_agg$plot,plot_guide$Plot)]
 
@@ -250,7 +251,7 @@ C_agg$soilOY<-belowground_sub$soil_OY[match(C_agg$plot,belowground_sub$Plot)]
 C_agg$rootC<-belowground$rootC[belowground_match]
 C_agg$rootOY<-belowground_sub$root_OY[match(C_agg$plot,belowground_sub$Plot)]
 
-## adding together AG wood, soil, and roots
+## adding together aboveground wood, soil, and fine roots
 C_agg$totalC<-C_agg$woodyC+C_agg$soilC+C_agg$rootC
 C_agg$totalOY<-C_agg$woodyOY+C_agg$soilOY+C_agg$rootOY
 
@@ -275,9 +276,9 @@ FD<-read.csv("OriginalData/ecy1958-sup-0003-tables1.csv")
 C_agg$PSV<-FD$PSV[match(C_agg$plot,FD$Plot)]
 C_agg$FDis<-FD$FDis[match(C_agg$plot,FD$Plot)]
 
-## leaf type and mycotype
-## the 0.97 here is for plot 147, which has one Tilia in it
-## (by mistake)
+## categorical leaf type and mycotype
+## the 0.97 here is for plot 147
+## which has one Tilia in it (by mistake)
 C_agg$mycotype<-ifelse(C_agg$percentAM==0,"E",
                        ifelse(C_agg$percentAM>0.97,"A","B"))
 C_agg$leaf_type<-ifelse(C_agg$percentCon==0,"D",
