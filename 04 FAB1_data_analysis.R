@@ -8,17 +8,17 @@ library(performance)
 library(piecewiseSEM)
 library(MASS)
 
-C_agg<-read.csv("ProcessedData/Cseq.csv")
+carbon_seq<-read.csv("ProcessedData/Cseq.csv")
 
 #############################
 ## AIC-based model selection for predictors of C stocks and OY
 
 ####
 ## total woody C
-mwt<-lm(woodyC~species_richness+FDis+PSV,data=C_agg)
+mwt<-lm(woodyC~species_richness+FDis+PSV,data=carbon_seq)
 mwt_block<-lmer(woodyC~species_richness+FDis+PSV+(1|block),
-                data=C_agg, REML=F)
-mwt_robust<-rlm(woodyC~species_richness+FDis+PSV,data=C_agg)
+                data=carbon_seq, REML=F)
+mwt_robust<-rlm(woodyC~species_richness+FDis+PSV,data=carbon_seq)
 
 options(na.action = "na.fail") # required for dredge to run
 mwt_dredge <- dredge(mwt,beta = "none",evaluate = T, rank = AICc)
@@ -34,12 +34,12 @@ mwt_model<-get.models(mwt_dredge, subset = 2)[[1]]
 
 ####
 ## woody C overyielding
-C_agg_woodyOY<-C_agg[which(!is.na(C_agg$woodyOY)),]
+carbon_seq_woodyOY<-carbon_seq[which(!is.na(carbon_seq$woodyOY)),]
 mw<-lm(woodyOY~species_richness+FDis+PSV,
-       data=C_agg_woodyOY)
+       data=carbon_seq_woodyOY)
 mw_block<-lmer(woodyOY~species_richness+FDis+PSV+(1|block),
-               data=C_agg_woodyOY,REML=F)
-mw_robust<-rlm(woodyOY~species_richness+FDis+PSV,data=C_agg_woodyOY)
+               data=carbon_seq_woodyOY,REML=F)
+mw_robust<-rlm(woodyOY~species_richness+FDis+PSV,data=carbon_seq_woodyOY)
 
 options(na.action = "na.fail")
 mw_dredge <- dredge(mw, beta = "none", evaluate = T, rank = AICc)
@@ -52,10 +52,10 @@ check_model(mw_model)
 
 ####
 ## complementarity effects
-mce<-lm(woodyCE~species_richness+FDis+PSV,data=C_agg_woodyOY)
+mce<-lm(woodyCE~species_richness+FDis+PSV,data=carbon_seq_woodyOY)
 mce_block<-lmer(woodyCE~species_richness+FDis+PSV+(1|block),
-                data=C_agg_woodyOY, REML=F)
-mce_robust<-rlm(woodyCE~species_richness+FDis+PSV,data=C_agg_woodyOY)
+                data=carbon_seq_woodyOY, REML=F)
+mce_robust<-rlm(woodyCE~species_richness+FDis+PSV,data=carbon_seq_woodyOY)
 
 options(na.action = "na.fail")
 mce_dredge <- dredge(mce, beta = "none", evaluate = T, rank = AICc)
@@ -69,16 +69,16 @@ check_model(mce_model)
 ## because of persistent disputes about the meaningfulness
 ## of the magnitudes of CE and SE, we might just want
 ## to see whether they differ from 0
-## we can also get rid of the biggest outlier
+## the distribution is skewed so we use a non-parametric test
 
-t.test(C_agg_woodyOY$woodyCE[-which(C_agg_woodyOY$plot==50)],)
+wilcox.test(carbon_seq_woodyOY$woodyCE)
 
 ####
 ## selection effects
-mse<-lm(woodySE~species_richness+FDis+PSV,data=C_agg_woodyOY)
+mse<-lm(woodySE~species_richness+FDis+PSV,data=carbon_seq_woodyOY)
 mse_block<-lmer(woodySE~species_richness+FDis+PSV+(1|block),
-                data=C_agg_woodyOY,REML=F)
-mse_robust<-rlm(woodySE~species_richness+FDis+PSV,data=C_agg_woodyOY)
+                data=carbon_seq_woodyOY,REML=F)
+mse_robust<-rlm(woodySE~species_richness+FDis+PSV,data=carbon_seq_woodyOY)
 
 options(na.action = "na.fail")
 mse_dredge <- dredge(mse, beta = "none", evaluate = T, rank = AICc)
@@ -92,16 +92,16 @@ check_model(mse_model)
 ## because of persistent disputes about the meaningfulness
 ## of the magnitudes of CE and SE, we might just want
 ## to see whether they differ from 0
-## we can also get rid of the biggest outlier
+## the distribution is skewed so we use a non-parametric test
 
-t.test(C_agg_woodyOY$woodySE[-which(C_agg_woodyOY$plot==50)],)
+wilcox.test(carbon_seq_woodyOY$woodySE)
 
 ####
 ## total change in soil C
-C_agg_soilC<-C_agg[which(!is.na(C_agg$soilC)),]
-mst<-lm(soilC~species_richness+FDis+PSV,data=C_agg_soilC)
+carbon_seq_soilC<-carbon_seq[which(!is.na(carbon_seq$soilC)),]
+mst<-lm(soilC~species_richness+FDis+PSV,data=carbon_seq_soilC)
 mst_block<-lmer(soilC~species_richness+FDis+PSV+(1|block),
-                data=C_agg_soilC,REML=F)
+                data=carbon_seq_soilC,REML=F)
 
 options(na.action = "na.fail")
 mst_dredge <- dredge(mst, beta = "none", evaluate = T, rank = AICc)
@@ -113,10 +113,10 @@ check_model(mst_model)
 
 ####
 ## overyielding in (change in) soil C
-C_agg_soilOY<-C_agg[which(!is.na(C_agg$soilOY)),]
-ms<-lm(soilOY~species_richness+FDis+PSV,data=C_agg_soilOY)
+carbon_seq_soilOY<-carbon_seq[which(!is.na(carbon_seq$soilOY)),]
+ms<-lm(soilOY~species_richness+FDis+PSV,data=carbon_seq_soilOY)
 ms_block<-lmer(soilOY~species_richness+FDis+PSV+(1|block),
-               data=C_agg_soilOY,REML=F)
+               data=carbon_seq_soilOY,REML=F)
 
 options(na.action = "na.fail")
 ms_dredge <- dredge(ms, beta = "none", evaluate = T, rank = AICc)
@@ -129,10 +129,10 @@ check_model(ms_model)
 
 ####
 ## total fine root C
-C_agg_rootC<-C_agg[which(!is.na(C_agg$rootC)),]
-mrt<-lm(rootC~species_richness+FDis+PSV,data=C_agg_rootC)
+carbon_seq_rootC<-carbon_seq[which(!is.na(carbon_seq$rootC)),]
+mrt<-lm(rootC~species_richness+FDis+PSV,data=carbon_seq_rootC)
 mrt_block<-lmer(rootC~species_richness+FDis+PSV+(1|block),
-                data=C_agg_rootC,REML=F)
+                data=carbon_seq_rootC,REML=F)
 
 options(na.action = "na.fail")
 mrt_dredge <- dredge(mrt, beta = "none", evaluate = T, rank = AICc)
@@ -145,10 +145,10 @@ check_model(mrt_model)
 
 ####
 ## overyielding in fine root C
-C_agg_rootOY<-C_agg[which(!is.na(C_agg$rootOY)),]
-mr<-lm(rootOY~species_richness+FDis+PSV,data=C_agg_rootOY)
-mr_block<-lmer(rootC~species_richness+FDis+PSV+(1|block),
-                data=C_agg_rootOY,REML=F)
+carbon_seq_rootOY<-carbon_seq[which(!is.na(carbon_seq$rootOY)),]
+mr<-lm(rootOY~species_richness+FDis+PSV,data=carbon_seq_rootOY)
+mr_block<-lmer(rootOY~species_richness+FDis+PSV+(1|block),
+               data=carbon_seq_rootOY,REML=F)
 
 options(na.action = "na.fail")
 mr_dredge <- dredge(mr, beta = "none", evaluate = T, rank = AICc)
@@ -162,10 +162,10 @@ check_model(mr_model)
 ## macroaggregates
 ## we add block here because it seems to consistently
 ## improve models + change parameter estimates
-C_agg_macro<-C_agg[which(!is.na(C_agg$macro250)),]
-mma<-lm(macro250~species_richness+FDis+PSV,data=C_agg_macro)
+carbon_seq_macro<-carbon_seq[which(!is.na(carbon_seq$macro250)),]
+mma<-lm(macro250~species_richness+FDis+PSV,data=carbon_seq_macro)
 mma_block<-lmer(macro250~species_richness+FDis+PSV+(1|block),
-                data=C_agg_macro,REML=F)
+                data=carbon_seq_macro,REML=F)
 
 options(na.action = "na.fail")
 mma_dredge <- dredge(mma, beta = "none", evaluate = T, rank = AICc)
@@ -180,50 +180,50 @@ check_model(mma_model)
 ## here we use local estimation in piecewiseSEM
 
 ## drop rows with missing data
-C_agg_sub<-C_agg[-which(is.na(C_agg$soilC) | is.na(C_agg$macro250)),]
+carbon_seq_sub<-carbon_seq[-which(is.na(carbon_seq$soilC) | is.na(carbon_seq$macro250)),]
 
 ## z-standardize important variables
-C_agg_standard<-C_agg_sub
+carbon_seq_standard<-carbon_seq_sub
 standard_cols<-c("species_richness","woodyC","soilC",
                  "macro250","percentAM","percentCon")
-C_agg_standard[,standard_cols]<-scale(C_agg_standard[,standard_cols])
+carbon_seq_standard[,standard_cols]<-scale(carbon_seq_standard[,standard_cols])
 
 ## this was the original proposed model
 ## before examining any SEM output
 localfit_orig_model<-psem(
-  lmer(woodyC~species_richness+percentCon+woodyC+(1|block),data=C_agg_standard),
-  lmer(macro250~percentAM+percentCon+woodyC+(1|block),data=C_agg_standard),
-  lm(soilC~species_richness+percentAM+woodyC+macro250+(1|block),
-     data=C_agg_standard)
+  lmer(woodyC~species_richness+percentCon+(1|block),data=carbon_seq_standard),
+  lmer(macro250~percentAM+percentCon+woodyC+(1|block),data=carbon_seq_standard),
+  lmer(soilC~species_richness+percentAM+percentCon+woodyC+macro250+(1|block),
+     data=carbon_seq_standard)
 )
 
 ## a full model
 localfit_full_model<-psem(
-  lmer(woodyC~species_richness+percentCon+percentAM+(1|block),data=C_agg_standard),
-  lmer(macro250~percentAM+percentCon+(1|block),data=C_agg_standard),
+  lmer(woodyC~species_richness+percentCon+percentAM+(1|block),data=carbon_seq_standard),
+  lmer(macro250~percentAM+percentCon+(1|block),data=carbon_seq_standard),
   lm(soilC~species_richness+percentAM+woodyC+macro250,
-     data=C_agg_standard)
+     data=carbon_seq_standard)
 )
 
 ## checking individual components
-# check_model(lmer(woodyC~species_richness+percentCon+percentAM+(1|block),data=C_agg_standard))
-# check_model(lmer(macro250~percentAM+percentCon+(1|block),data=C_agg_standard))
+# check_model(lmer(woodyC~species_richness+percentCon+percentAM+(1|block),data=carbon_seq_standard))
+# check_model(lmer(macro250~percentAM+percentCon+(1|block),data=carbon_seq_standard))
 # check_model(lm(soilC~species_richness+percentAM+woodyC+macro250,
-#                data=C_agg_standard))
+#                data=carbon_seq_standard))
 
 ## factors that influence leaf litter quantity (woody C)
 ## or quality (% needleleaf) don't seem to influence soil C
 localfit_sub_model<-psem(
-  lmer(woodyC~species_richness+percentCon+percentAM+(1|block),data=C_agg_standard),
-  lmer(macro250~percentAM+percentCon+(1|block),data=C_agg_standard),
+  lmer(woodyC~species_richness+percentCon+percentAM+(1|block),data=carbon_seq_standard),
+  lmer(macro250~percentAM+percentCon+(1|block),data=carbon_seq_standard),
   lm(soilC~species_richness+percentAM+macro250,
-     data=C_agg_standard)
+     data=carbon_seq_standard)
 )
 
 localfit_min_model<-psem(
-  lmer(woodyC~species_richness+percentCon+percentAM+(1|block),data=C_agg_standard),
-  lmer(macro250~percentCon+(1|block),data=C_agg_standard),
+  lmer(woodyC~species_richness+percentCon+percentAM+(1|block),data=carbon_seq_standard),
+  lmer(macro250~percentCon+(1|block),data=carbon_seq_standard),
   lm(soilC~species_richness+percentAM,
-     data=C_agg_standard)
+     data=carbon_seq_standard)
 )
 
