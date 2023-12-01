@@ -190,16 +190,16 @@ belowground$rootC<-belowground$Roots.Dry.Mass/(5*2.54^2*pi)*10000*10000*0.5/1000
 ## these plots weren't actually sampled
 belowground$rootC[belowground$Plot %in% c(60,76,96,114)]<-NA
 
-sp_comp<-belowground[,c("Plot","Sp.Richness","block","soilC_diff_plot","rootC",
+sp_comp<-belowground[,c("Plot","Sp.Richness","block","soilC","rootC",
                         "ACNE","ACRU","BEPA","JUVI",
                         "PIBA","PIRE","PIST","QUAL",
                         "QUEL","QUMA","QURU","TIAM")]
-sp_comp_long<-melt(sp_comp,id.vars = c("Plot","Sp.Richness","block","soilC_diff_plot","rootC"))
+sp_comp_long<-melt(sp_comp,id.vars = c("Plot","Sp.Richness","block","soilC","rootC"))
 
 ## attach monoculture values from the same species and block
 sp_comp_long$mono_soil<-unlist(apply(sp_comp_long,1,function(x) {
   mono_block<-which(sp_comp_long$value>0.99 & sp_comp_long$variable==x["variable"] & sp_comp_long$block==x["block"])
-  return(sp_comp_long$soilC_diff_plot[mono_block])
+  return(sp_comp_long$soilC[mono_block])
 }))
 
 sp_comp_long$mono_root<-unlist(apply(sp_comp_long,1,function(x) {
@@ -217,7 +217,7 @@ tot_mono_root_exp<-aggregate(mono_root_exp~Plot,data=sp_comp_long,FUN=sum)
 
 ## subtract expectations from observed to get overyielding
 belowground$mono_soil_exp<-tot_mono_soil_exp$mono_soil_exp[match(belowground$Plot,tot_mono_soil_exp$Plot)]
-belowground$soil_OY<-belowground$soilC_diff_plot-belowground$mono_soil_exp
+belowground$soil_OY<-belowground$soilC-belowground$mono_soil_exp
 belowground$mono_root_exp<-tot_mono_root_exp$mono_root_exp[match(belowground$Plot,tot_mono_root_exp$Plot)]
 belowground$root_OY<-belowground$rootC-belowground$mono_root_exp
 
@@ -237,10 +237,10 @@ C_agg$woodySE<-C_partition$SE.C_estimate[match(C_agg$plot,C_partition$plot)]
 
 ## percentages of soil C and N at beginning and end
 belowground_match<-match(C_agg$plot,belowground$Plot)
-C_agg$perC_init<-belowground$X.C_2013[belowground_match]
-C_agg$perC<-belowground$X..C_2019[belowground_match]
-C_agg$perN_init<-belowground$X.N_2013[belowground_match]
-C_agg$perN<-belowground$X..N_2019[belowground_match]
+C_agg$perC_2013<-belowground$X.C_2013[belowground_match]
+C_agg$perC_2019<-belowground$X..C_2019[belowground_match]
+C_agg$perN_2013<-belowground$X.N_2013[belowground_match]
+C_agg$perN_2019<-belowground$X..N_2019[belowground_match]
 
 ## bulk density at the block level
 C_agg$BD<-belowground$BD[belowground_match]
@@ -263,23 +263,21 @@ C_agg$rootOY<-belowground_sub$root_OY[match(C_agg$plot,belowground_sub$Plot)]
 C_agg$totalC<-C_agg$woodyC+C_agg$soilC+C_agg$rootC
 C_agg$totalOY<-C_agg$woodyOY+C_agg$soilOY+C_agg$rootOY
 
-## macroaggregates
+## macroaggregates, soil moisture, and pH
 C_agg$macro250<-belowground$X..Mass.of.250[belowground_match]
-
-## soil moisture
 C_agg$soil_moisture<-belowground$Soil.moisture[belowground_match]
+C_agg$pH<-belowground$pH[belowground_match]
 
 ## planted proportions of AM and coniferous trees
 C_agg$percentAM<-FAB_planted$percentAM[match(C_agg$plot,FAB_planted$plot)]
 C_agg$percentCon<-FAB_planted$percentCon[match(C_agg$plot,FAB_planted$plot)]
 
-## log (root C/AG woody C)
-C_agg$logBA<-log(C_agg$rootC/C_agg$woodyC)
-
 ## functional and phylogenetic diversity
 FD<-read.csv("OriginalData/ecy1958-sup-0003-tables1.csv")
 C_agg$PSV<-FD$PSV[match(C_agg$plot,FD$Plot)]
 C_agg$FDis<-FD$FDis[match(C_agg$plot,FD$Plot)]
+## optional step to set PSV to 0 in monocultures
+C_agg$PSV[C_agg$species_richness==1]<-0
 
 ## categorical leaf type and mycotype
 ## the 0.97 here is for plot 147
@@ -288,8 +286,5 @@ C_agg$mycotype<-ifelse(C_agg$percentAM==0,"E",
                        ifelse(C_agg$percentAM>0.97,"A","B"))
 C_agg$leaf_type<-ifelse(C_agg$percentCon==0,"D",
                         ifelse(C_agg$percentCon==1,"C","B"))
-
-## optional step to set PSV to 0 in monocultures
-C_agg$PSV[C_agg$species_richness==1]<-0
 
 write.csv(C_agg,"ProcessedData/Cseq.csv",row.names = F)
