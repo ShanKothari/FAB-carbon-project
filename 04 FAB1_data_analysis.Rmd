@@ -1,0 +1,307 @@
+---
+title: "Appendix II: Statistical analyses"
+author: 
+- Reb Bryant
+- Shan Kothari
+- Jeannine Cavender-Bares
+- Stephanie J. Curran
+- Jake J. Grossman
+- Sarah E. Hobbie
+- Charlotte Nash
+- Grace C. Neumiller
+- Craig R. See
+date: "2023-11-30"
+output: pdf_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+knitr::opts_knit$set(root.dir = "C:/Users/querc/Dropbox/FABCarbonProject/ProcessedData")
+```
+
+## Setting up the workspace
+
+This document is meant to provide a narrative summary to the statistical analyses accompanying the manuscript "Independent effects of tree diversity on aboveground and soil carbon pools after six years of experimental afforestation" by Bryant et al. (in review, as of `r Sys.Date()`).
+
+Our first step is to load a number of packages. Although this paper was a collaborative work in which multiple co-authors were working in their own R environments, all results have been checked under the package numbers listed in *R v.4.2.1*.
+
+```{r packages, echo = T, warning=F, message=F}
+library(lme4) ## 1.1.32
+library(lmerTest) ## 3.1.3
+library(MuMIn) ## 1.47.5
+library(car) ## 3.1.2
+library(performance) ## 0.10.5
+library(piecewiseSEM) ## 2.3.0
+library(MASS) ## 7.3.57
+```
+
+Go to the working directory where you have the archived data file saved.
+
+<!-- note: we should change the name of this file -->
+
+```{r read}
+# setwd(".")
+carbon_seq<-read.csv("Cseq.csv")
+```
+
+## Carbon accumulation and biodiversity facets
+
+One of the core goals of our paper is to show how carbon storage in our experimental plots was influenced by the diversity of planted trees in the first six years of the experiment. We estimated carbon storage across three pools:
+
+* aboveground wood
+* soil (0-20 cm)--expressed as change from pre-treatment soil carbon
+* fine roots (0-20 cm)
+
+Besides these pools, we also calculated overyielding for mixture plots as the difference between the observed pools and monoculture-based expectations. For aboveground wood, we further partitioned overyielding using into complementarity and selection effects, following Loreau & Hector (2001).
+
+We considered three facets of diversity:
+
+* species richness
+* Laliberté and Legendre (2010)'s functional dispersion (FDis), as reported by Grossman et al. (2017)
+* Helmus et al. (2007)'s phylogenetic species variability (PSV), as reported by Grossman et al. (2017)
+
+The latter two are metrics of functional and phylogenetic diversity that are designed not to be dependent on species richness. However, since PSV and FDis are both 0 for monocultures, they do end up somewhat correlated with each other and with species richness. As we will see, multicollinearity does not end up being a severe problem in most cases.
+
+In keeping with the dominant paradigm in biodiversity-ecosystem function (BEF) research, we proposed that planted tree diversity would positively influence all three carbon pools. However, we did not pose hypotheses about which specific aspects of tree diversity would matter most. As a result, we used an AICc-based framework to test all models nested within a model that includes species richness, FDis, and PSV. We select the most parsimonious model with a $\Delta AICc<2$ from the model with the lowest AICc. (In effect, this is much like standard null hypothesis significance testing, where $AICc<2$ corresponds to $p>0.05$.) When there are two or more equally parsimonious such models, we selected the one with the lower AICc.
+
+### Aboveground carbon
+
+We can start with aboveground woody carbon:
+
+```{r woody_total1, message=F}
+mwt<-lm(woodyC~species_richness+FDis+PSV,data=carbon_seq)
+mwt_block<-lmer(woodyC~species_richness+FDis+PSV+(1|block),
+                data=carbon_seq, REML=F)
+
+options(na.action = "na.fail") # required for dredge to run
+mwt_dredge <- dredge(mwt,beta = "none",evaluate = T, rank = AICc)
+mwt_block_dredge <- dredge(mwt_block,beta = "none",evaluate = T,rank = AICc)
+options(na.action = "na.omit")
+
+## instead of selecting a 'best' model, one could instead perform model averaging
+# summary(model.avg(mwt_dredge, subset = delta <= 2))
+```
+
+The `dredge` function tests all nested submodels of the specified model. Here we apply it to models both with and without block random effects. There are three blocks in the FAB1 experiment. The block effect tends to either yield a singular fit or negligible changes in model parameters--the exceptions being in analyses of macroaggregates or soil moisture. As a result, we generally do not show the output of models with the block random effect.
+
+We can examine our AIC table, select our 'best' model, and do some basic checks of model assumptions as follows:
+
+```{r woody_total2, fig.height=8}
+mwt_dredge ## we'll select the second model
+mwt_model<-get.models(mwt_dredge, subset = 2)[[1]]
+check_model(mwt_model)
+```
+
+A few things are apparent here. First of all, the two retained predictors (FDis and PSV) have opposite-sign coefficients. These predictors have a positive correlation with each other across the full dataset, as shown below:
+
+```{r FDis_PSV}
+plot(jitter(PSV,factor=50)~jitter(FDis,factor=50),data=carbon_seq)
+```
+
+Therefore, their "effects" partly offset each other. However, their variance inflation factor (VIF) is not so high that it would ordinarily raise concerns about multicollinearity.
+
+Perhaps more troubling are the other checks: the posterior predictive check plot, the homoskedasticity plot, and the Q-Q (normality of residuals) plot. It is common for data from BEF experiments not to strictly meet these assumptions of ordinary least-squares regression because the variance is often greatest among monocultures. To assure ourselves that our results are robust, we can use robust regression through iterated re-weighted least squares to reduce the influence of high-leverage points.
+
+```{r woody_total3, message=F}
+mwt_robust<-rlm(woodyC~species_richness+FDis+PSV,data=carbon_seq)
+
+options(na.action = "na.fail")
+mwt_robust_dredge <- dredge(mwt_robust,beta = "none",evaluate = T,rank = AICc)
+options(na.action = "na.omit")
+
+mwt_robust_dredge
+```
+
+Here, the 'best' model selected involves the same variables with similar (but not exactly the same) parameter values to when we were using OLS.
+
+### Overyielding in aboveground carbon
+
+Let's repeat the same procedure for overyielding in aboveground carbon.
+
+```{r woody_OY, message=F, fig.height=8}
+## for the dredge function to work, we need to remove plots with NAs
+carbon_seq_woodyOY<-carbon_seq[which(!is.na(carbon_seq$woodyOY)),]
+mw<-lm(woodyOY~species_richness+FDis+PSV,
+       data=carbon_seq_woodyOY)
+## as before, the posterior predictive check and Q-Q plot
+## for the OLS model reveal violations of assumptions
+mw_robust<-rlm(woodyOY~species_richness+FDis+PSV,data=carbon_seq_woodyOY)
+
+options(na.action = "na.fail")
+mw_dredge <- dredge(mw, beta = "none", evaluate = T, rank = AICc)
+mw_robust_dredge <- dredge(mw_robust, beta = "none", evaluate = T, rank = AICc)
+options(na.action = "na.omit")
+
+mw_dredge ## we select the first model
+mw_robust_dredge ## we select the first model
+
+mw_model<-get.models(mw_dredge, subset = 1)[[1]]
+check_model(mw_model)
+```
+
+Robust regression tends to shrink parameter estimates slightly, but yields a qualitatively very similar model.
+
+Overyielding is often partitioned via Loreau & Hector (2001)'s method into complementarity and selection effects. Complementarity effects (CE) are based on the mean of species' *relative* yields and are often taken to indicate synergistic interactions like niche partitioning or facilitation. Selection (SE) effects describe how more productive species tend to show greater (or lesser) relative boosts in productivity than average in mixtures. Although CE and SE must sum to overyielding, it is possible for one to be greater than overyielding (or even total plot biomass) if the other is negative. (It is also possible for total overyielding to be negative, in which case it may be called underyielding.) Although CE and SE are expressed in the same units as overyielding (here, kg biomass per ha), it can be hard to make sense of extreme CE or SE values in these terms. For these reasons, we choose to focus on whether they are generally positive or negative than on their actual magnitudes. Starting with the Loreau & Hector (2001) paper itself, it is common for BEF researchers to expect positive CE and non-positive SE on average across plots. This would imply that (1) species tend to overperform in mixture and (2) it is not only the most productive species that overperform in mixture. It may help to look at the data quickly before proceeding.
+
+```{r CESE}
+plot(woodyCE~species_richness,data=carbon_seq_woodyOY)
+plot(woodySE~species_richness,data=carbon_seq_woodyOY)
+```
+
+These plots reveal that there are a couple outliers with highly positive CE and negative SE. The most extreme are plots 14 and 50, both 12-species plots. Because of the odd distribution of CE and SE values, we'll conduct both a parametric t-test and a non-parametric Wilcoxon rank sum test to check whether CE or SE differ from 0. Most research does not consider how inferences about CE or SE are influenced by skewed distribution or influential points, so the t-test is probably more consistent with how results are usually reported. However, the Wilcoxon test may be more appropriate.
+
+```{r CESE_tests}
+t.test(carbon_seq_woodyOY$woodyCE)
+t.test(carbon_seq_woodyOY$woodySE)
+wilcox.test(carbon_seq_woodyOY$woodyCE)
+wilcox.test(carbon_seq_woodyOY$woodySE)
+```
+
+There is some evidence that CE differs from 0, but not much evidence that SE does.
+
+<!-- we should change the results section and discussion to match this -->
+
+### Soil C accumulation and overyielding
+
+We can now do the same for soil C accumulation:
+
+```{r total_soilC, message=F, fig.height=8}
+carbon_seq_soilC<-carbon_seq[which(!is.na(carbon_seq$soilC)),]
+mst<-lm(soilC~species_richness+FDis+PSV,data=carbon_seq_soilC)
+
+options(na.action = "na.fail")
+mst_dredge <- dredge(mst, beta = "none", evaluate = T, rank = AICc)
+options(na.action = "na.omit")
+
+mst_dredge ## we pick the first one
+mst_model<-get.models(mst_dredge, subset = 1)[[1]]
+check_model(mst_model)
+```
+
+And for overyielding in soil C accumulation:
+
+```{r OY_soilC, message=F}
+carbon_seq_soilOY<-carbon_seq[which(!is.na(carbon_seq$soilOY)),]
+ms<-lm(soilOY~species_richness+FDis+PSV,data=carbon_seq_soilOY)
+
+options(na.action = "na.fail")
+ms_dredge <- dredge(ms, beta = "none", evaluate = T, rank = AICc)
+options(na.action = "na.omit")
+
+ms_dredge ## we pick the second one
+ms_model<-get.models(ms_dredge, subset = 2)[[1]]
+check_model(ms_model)
+```
+
+Both of these models seem to meet the assumptions quite well.
+
+### Fine roots and overyielding
+
+```{r rootC, message=F}
+## total root C
+carbon_seq_rootC<-carbon_seq[which(!is.na(carbon_seq$rootC)),]
+mrt<-lm(rootC~species_richness+FDis+PSV,data=carbon_seq_rootC)
+
+options(na.action = "na.fail")
+mrt_dredge <- dredge(mrt, beta = "none", evaluate = T, rank = AICc)
+options(na.action = "na.omit")
+
+mrt_dredge ## we select the first model
+mrt_model<-get.models(mrt_dredge, subset = 1)[[1]]
+check_model(mrt_model)
+```
+
+The selected model (with no predictors) does a poor job of meeting assumptions, but even changing out `rootC` for `log(rootC)`, which meets the assumptions better, yields a 'best' model with no predictor variables. The same is true of robust regression. We move on to overyielding.
+
+
+```{r rootC_OY, message=F, fig.height=8}
+## overyielding in root C
+carbon_seq_rootOY<-carbon_seq[which(!is.na(carbon_seq$rootOY)),]
+mr<-lm(rootOY~species_richness+FDis+PSV,data=carbon_seq_rootOY)
+mr_robust<-rlm(rootOY~species_richness+FDis+PSV,data=carbon_seq_rootOY)
+
+options(na.action = "na.fail")
+mr_dredge <- dredge(mr, beta = "none", evaluate = T, rank = AICc)
+mr_robust_dredge <- dredge(mr_robust, beta = "none", evaluate = T, rank = AICc)
+options(na.action = "na.omit")
+
+mr_dredge ## we select the first model
+mr_model<-get.models(mr_dredge, subset = 1)[[1]]
+check_model(mr_model)
+```
+
+Evidently, this model also does a poor job of meeting assumptions. Thus, we show the robust regression results to buttress the claim that the same model is selected even when high-leverage points are not allowed to be as influential.
+
+```{r rootC_OY_robust,message=F}
+mr_robust<-rlm(rootOY~species_richness+FDis+PSV,data=carbon_seq_rootOY)
+
+options(na.action = "na.fail")
+mr_robust_dredge <- dredge(mr_robust, beta = "none", evaluate = T, rank = AICc)
+options(na.action = "na.omit")
+
+mr_robust_dredge
+```
+
+PSV is still the only variable selected, but its parameter estimate shrinks quite a bit.
+
+## Structural equation modeling
+
+We use structural equation modeling (SEM) to tie together our hypotheses in a more integrative manner. Although we found no evidence elsewhere for a correlation between aboveground and soil C accumulation, SEMs allow us to directly test whether the influence of species richness on soil C accumulation is mediated by aboveground C.
+
+We select six variables:
+
+* species richness (exogenous)
+* percent of planted trees associated with AM fungi (exogenous)
+* percent of planted trees that are conifers (exogenous)
+* aboveground C (endogenous)
+* macroaggregates (endogenous)
+* soil C accumulation (endogenous)
+
+The first step is to drop rows with NAs in any of these variables, then z-standardize all of them so that regression coefficients in the SEM are standardized:
+
+```{r SEM_prep}
+carbon_seq_sub<-carbon_seq[-which(is.na(carbon_seq$soilC) | is.na(carbon_seq$macro250)),]
+
+carbon_seq_standard<-carbon_seq_sub
+standard_cols<-c("species_richness","woodyC","soilC",
+                 "macro250","percentAM","percentCon")
+carbon_seq_standard[,standard_cols]<-scale(carbon_seq_standard[,standard_cols])
+```
+
+As explained in the main text and Appendix I, we proposed an initial model based on *a priori* hypotheses and earlier data analyses. The structure of this model is as follows:
+
+```{r SEM_orig, warning=F, message=F}
+localfit_orig_model<-psem(
+  lmer(woodyC~species_richness+percentCon+(1|block),data=carbon_seq_standard),
+  lmer(macro250~percentAM+percentCon+woodyC+(1|block),data=carbon_seq_standard),
+  lmer(soilC~species_richness+percentAM+percentCon+woodyC+macro250+(1|block),
+     data=carbon_seq_standard)
+)
+
+summary(localfit_orig_model)
+```
+
+By running `check_models()` on each subcomponent of the model, it becomes clear that percent conifer and aboveground C have moderately high VIF due to their high correlation with each other. We removed aboveground C from the model for macroaggregates and percent conifer from the model for soil C accumulation, although we caution that in any case it is a challenge to attribute anything definitely to one or the other variable.
+
+Two other things are apparent. One is that the block random effect for soil C reaches a singular fit, so we remove it. The other is that the tests of directed separation show conditional dependence between percent AM and woody C. Since percent AM is exogenous, we add it as a predictor of woody C. We arrive at the following model:
+
+```{r SEM_full, warning=F}
+localfit_full_model<-psem(
+  lmer(woodyC~species_richness+percentCon+percentAM+(1|block),data=carbon_seq_standard),
+  lmer(macro250~percentAM+percentCon+(1|block),data=carbon_seq_standard),
+  lm(soilC~species_richness+percentAM+woodyC+macro250,
+     data=carbon_seq_standard)
+)
+
+summary(localfit_full_model)
+```
+
+As the Fisher's C > 0.05 shows, this model fits better than the one above. The in-depth interpretation of this model is in the main text. We can check each of the submodels of the full SEM to make sure that it means standard assumptions.
+
+```{r SEM_checking,fig.height=8}
+check_model(lmer(woodyC~species_richness+percentCon+percentAM+(1|block),data=carbon_seq_standard))
+check_model(lmer(macro250~percentAM+percentCon+(1|block),data=carbon_seq_standard))
+check_model(lm(soilC~species_richness+percentAM+woodyC+macro250,data=carbon_seq_standard))
+```
+
+Each of these plots looks reasonably good.
