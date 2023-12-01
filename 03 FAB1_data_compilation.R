@@ -2,11 +2,17 @@ setwd("C:/Users/querc/Dropbox/FABCarbonProject/")
 
 library(reshape2)
 library(pdiv) ## Pascal Niklaus's pdiv package
+## installed via (with devtools):
+# install_github("pascal-niklaus/pdiv/pdiv")
 
+## as a reminder, this data set has the FAB inventory data
+## where each row is one individual. in the second step (02)
+## we estimated the carbon content of each tree in 2019
+## based on measured height and measured/estimated basal diameter
 FABdata<-read.csv("ProcessedData/FAB_Cestimate.csv")
 
 ## examine mortality rates across plots
-FABdata_alive<-FABdata[which(FABdata$deadmissing_2019=="No"),]
+# FABdata_alive<-FABdata[which(FABdata$deadmissing_2019=="No"),]
 # max((64-table(FABdata_alive$plot))/64)
 # min((64-table(FABdata_alive$plot))/64)
 # median((64-table(FABdata_alive$plot))/64)
@@ -169,7 +175,7 @@ belowground$soilN_diff<-belowground$X..N_2019-belowground$X.N_2013
 ## convert to g C accumulated / cm^3 soil using BD
 belowground$soilC_diff_vol<-belowground$soilC_diff/100*belowground$BD
 belowground$soilN_diff_vol<-belowground$soilN_diff/100*belowground$BD
-## 200000 cm^3 per m^2 sampled, 10000 m^2 per ha, 1000000 g per Mg
+## 20 cm * 10000 cm^2 per m^2, 10000 m^2 per ha, 1000000 g per Mg
 belowground$soilC_diff_plot<-belowground$soilC_diff_vol*200000*10000/1000000
 belowground$soilN_diff_plot<-belowground$soilN_diff_vol*200000*10000/1000000
 
