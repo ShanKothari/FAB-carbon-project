@@ -171,17 +171,19 @@ belowground$BD[belowground$block==3]<-mean(BD_wide$BD[BD_wide$block==3])
 ## first take the difference in percent
 ## (which assumes bulk density remains unchanged)
 belowground$soilC_diff<-belowground$X..C_2019-belowground$X.C_2013
-belowground$soilN_diff<-belowground$X..N_2019-belowground$X.N_2013
 ## convert to g C accumulated / cm^3 soil using BD
 belowground$soilC_diff_vol<-belowground$soilC_diff/100*belowground$BD
-belowground$soilN_diff_vol<-belowground$soilN_diff/100*belowground$BD
 ## 20 cm * 10000 cm^2 per m^2, 10000 m^2 per ha, 1000000 g per Mg
 belowground$soilC_diff_plot<-belowground$soilC_diff_vol*200000*10000/1000000
+
+## do the same for soil nitrogen, even though we don't use it
+belowground$soilN_diff<-belowground$X..N_2019-belowground$X.N_2013
+belowground$soilN_diff_vol<-belowground$soilN_diff/100*belowground$BD
 belowground$soilN_diff_plot<-belowground$soilN_diff_vol*200000*10000/1000000
 
-## soil C pool at the end (not change)
-belowground$soilC_pool_vol<-belowground$X..C_2019/100*belowground$BD
-belowground$soilC_pool_plot<-belowground$soilC_pool_vol*200000*10000/1000000
+## soil C pool at the beginning and the end end (not change)
+belowground$soilC_pool_2013<-(belowground$X.C_2013/100*belowground$BD)*200000*10000/1000000
+belowground$soilC_pool_2019<-(belowground$X..C_2019/100*belowground$BD)*200000*10000/1000000
 
 ## fine root carbon, assuming roots are 50% carbon
 ## sampled from 2 in diameter root cores, 5 cores per plot
@@ -235,10 +237,11 @@ C_agg$woodyOY<-OY.agg$ind.OY[match(C_agg$plot,OY.agg$plot)]
 C_agg$woodyCE<-C_partition$CE.C_estimate[match(C_agg$plot,C_partition$plot)]
 C_agg$woodySE<-C_partition$SE.C_estimate[match(C_agg$plot,C_partition$plot)]
 
-## percentages of soil C and N
+## percentages of soil C and N at beginning and end
 belowground_match<-match(C_agg$plot,belowground$Plot)
 C_agg$perC_init<-belowground$X.C_2013[belowground_match]
 C_agg$perC<-belowground$X..C_2019[belowground_match]
+C_agg$perN_init<-belowground$X.N_2013[belowground_match]
 C_agg$perN<-belowground$X..N_2019[belowground_match]
 
 ## bulk density at the block level
@@ -247,8 +250,9 @@ C_agg$BD<-belowground$BD[belowground_match]
 ## change in soil C at plot scale
 C_agg$soilC<-belowground$soilC_diff_plot[belowground_match]
 
-## total soil C at scale
-C_agg$soilC_pool<-belowground$soilC_pool_plot[belowground_match]
+## total soil C at plot scale at beginning and end
+C_agg$soilC_pool_2013<-belowground$soilC_pool_2013[belowground_match]
+C_agg$soilC_pool_2019<-belowground$soilC_pool_2019[belowground_match]
 
 ## soil C overyielding
 C_agg$soilOY<-belowground_sub$soil_OY[match(C_agg$plot,belowground_sub$Plot)]
@@ -270,9 +274,6 @@ C_agg$soil_moisture<-belowground$Soil.moisture[belowground_match]
 ## planted proportions of AM and coniferous trees
 C_agg$percentAM<-FAB_planted$percentAM[match(C_agg$plot,FAB_planted$plot)]
 C_agg$percentCon<-FAB_planted$percentCon[match(C_agg$plot,FAB_planted$plot)]
-
-## change in soil N
-C_agg$soilN<-belowground$soilN_diff_plot[belowground_match]
 
 ## log (root C/AG woody C)
 C_agg$logBA<-log(C_agg$rootC/C_agg$woodyC)
