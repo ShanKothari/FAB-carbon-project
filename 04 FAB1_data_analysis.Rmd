@@ -1,5 +1,5 @@
 ---
-title: "Appendix II: Statistical analyses"
+title: "Appendix S2: Statistical analyses"
 author: 
 - Reb Bryant
 - Shan Kothari
@@ -10,7 +10,6 @@ author:
 - Charlotte Nash
 - Grace C. Neumiller
 - Craig R. See
-date: "2023-11-30"
 output: pdf_document
 ---
 
@@ -25,6 +24,8 @@ This document is meant to provide a narrative summary to the statistical analyse
 
 Our first step is to load a number of packages. Although this paper was a collaborative work in which multiple co-authors were working in their own R environments, all results have been checked under the package numbers listed in *R v.4.2.1*.
 
+<!-- in the manuscript we wrote 4.1.1 -->
+
 ```{r packages, echo = T, warning=F, message=F}
 library(lme4) ## 1.1.32
 library(lmerTest) ## 3.1.3
@@ -33,15 +34,220 @@ library(car) ## 3.1.2
 library(performance) ## 0.10.5
 library(piecewiseSEM) ## 2.3.0
 library(MASS) ## 7.3.57
+library(ggplot2) ## 3.4.2
 ```
 
-Go to the working directory where you have the archived data file saved.
+Next, we go to the working directory where we saved the archived data file and read it in.
 
 <!-- note: we should change the name of this file -->
 
 ```{r read}
 # setwd(".")
 carbon_seq<-read.csv("Cseq.csv")
+```
+
+## Relationships among aboveground, soil, and fine root carbon
+
+One of the first results presented in the paper is the relationship between soil C in 2013 (pre-treatment) and 2019.
+
+```{r soil_C_legacy1, warning = F, message = F}
+## here we use initial and final percent C, although the results are similar
+## using initial and final soil C pools (which accounts for bulk density variation)
+
+## one can add a block random intercept here with lmer, adding +(1|block)
+## however,  it doesn't change parameter values much
+summary(lm(perC_2019~perC_2013,data=carbon_seq))
+
+## in general, we plot separate regression lines for each block just to be
+## able to check the generality within/among blocks more easily
+## naturally, these do not correspond to the 'overall' best-fit line
+ggplot(data=carbon_seq,aes(x=perC_2013,y=perC_2019,color=as.factor(block)))+
+  geom_point(size=2)+geom_smooth(method="lm",se=F,linewidth=2)
+```
+
+```{r soil_C_legacy1_check,fig.height = 8, echo = F}
+check_model(lm(perC_2019~perC_2013,data=carbon_seq))
+```
+
+Despite a couple influential observations that declined in soil percent C, it's clear that pre-treatment and 2019 soil C are positively correlated. If we want to understand the drivers of carbon *sequestration*, we have good reason to consider the change in soil C pools rather than simply the endpoint in 2019. We might first want to check whether initial soil C determines how much C accumulates.
+
+```{r soil_C_legacy2, warning = F, message = F}
+## again these results are robust to alternate ways of analyzing the data
+## including considering the total pools and adding block random effects
+carbon_seq$perC_change<-carbon_seq$perC_2019-carbon_seq$perC_2013
+summary(lm(perC_change~perC_2013,data=carbon_seq))
+ggplot(data=carbon_seq,aes(x=perC_2013,y=perC_change,color=as.factor(block)))+
+  geom_point(size=2)+geom_smooth(method="lm",se=F,linewidth=2)
+```
+
+```{r soil_C_legacy2_check,fig.height = 8, echo = F}
+check_model(lm(perC_change~perC_2013,data=carbon_seq))
+```
+
+We see the same influential observations as before, but there remains no evidence for a relationship between initial soil C and change in soil C. We can assume that change in soil C is mainly driven by our treatments rather than be legacies of pre-existing soil conditions.
+
+One of the key questions of the manuscript is: does change in soil C correlate with aboveground (woody) C?
+
+```{r soil_wood, warning = F, message = F}
+## here we'll switch to using pools so that aboveground and soil are
+## in the same units
+
+## note that a block random intercept results in a singular fit
+summary(lm(soilC~woodyC,data=carbon_seq))
+ggplot(data=carbon_seq,aes(x=woodyC,y=soilC,color=as.factor(block)))+
+  geom_point(size=2)+geom_smooth(method="lm",se=F,linewidth=2)
+```
+
+```{r soil_wood_check,fig.height = 8, echo = F}
+check_model(lm(soilC~woodyC,data=carbon_seq))
+```
+
+It is clear that there is no relationship between the two variables. However, as we report in the paper, if we subset the data to monoculture plots only, we see a significant interaction between species ID and aboveground C on soil C.
+
+<!-- this needs to be filled in... we don't have monoculture species ID in the data frame -->
+```{r soil_wood_mono, warning = F, message = F}
+carbon_seq_mono<-subset(carbon_seq,species_richness==1)
+## summary(aov(soilC~woodyC*species,data=carbon_seq_mono))
+# ggplot(data=carbon_seq,aes(x=woodyC,y=soilC,color=as.factor(block)))+
+#   geom_point(size=2)+geom_smooth(method="lm",se=F,linewidth=2)
+```
+
+Lastly, we look at the third pool we measured: fine root C. First of all, how does fine root C relate to soil C accumulation?
+
+```{r root_soil, warning = F, message = F}
+## note that a block random intercept results in a singular fit
+summary(lm(soilC~rootC,data=carbon_seq))
+ggplot(data=carbon_seq,aes(x=rootC,y=soilC,color=as.factor(block)))+
+  geom_point(size=2)+geom_smooth(method="lm",se=F,linewidth=2)
+```
+
+```{r root_soil_check,fig.height = 8, echo = F}
+check_model(lm(soilC~rootC,data=carbon_seq))
+```
+
+There is fairly weak evidence for a positive relationship between fine root C and soil C accumulation. Next, we check the relationship with aboveground C.
+
+```{r root_woody, warning = F, message = F}
+## note that a block random intercept results in a singular fit
+summary(lm(rootC~woodyC,data=carbon_seq))
+ggplot(data=carbon_seq,aes(x=woodyC,y=rootC,color=as.factor(block)))+
+  geom_point(size=2)+geom_smooth(method="lm",se=F,linewidth=2)
+```
+
+```{r root_woody_check,fig.height = 8, echo = F}
+check_model(lm(rootC~woodyC,data=carbon_seq))
+```
+
+Due to the highly skewed distribution of root C, this model evidently violates the normality of residuals assumption of OLS. Although we have good reasons to want to keep root C in its original units, we could try the model with log-transformed root C as a robustness check:
+
+```{r root_soil_log, warning = F, message = F}
+## note that a block random intercept results in a singular fit
+summary(lm(log(rootC)~woodyC,data=carbon_seq))
+ggplot(data=carbon_seq,aes(x=woodyC,y=log(rootC),color=as.factor(block)))+
+  geom_point(size=2)+geom_smooth(method="lm",se=F,linewidth=2)
+```
+
+```{r soil_root_log_check,fig.height = 8, echo = F}
+check_model(lm(log(rootC)~woodyC,data=carbon_seq))
+```
+
+Although the functional form of the relationship now evidently differs, the coefficient is still negative and the model does somewhat better at meeting the assumptions.
+
+## Changes in soil C in relation to other soil characteristics
+
+A lot of recent work in ecosystem ecology links the accumulation of stable soil C to the formation of macroaggregates (250 $\mu m$ diameter and up). We could first ask: does the percentage of macroaggregates (in 2019) correlate with soil carbon in 2013 (pre-treatment) or 2019?
+
+```{r soil_macro_init, warning = F, message = F}
+## note that these relationships would be significant in the absence
+## of the block random intercept
+summary(lmer(soilC_2013~macro250+(1|block),data=carbon_seq))
+summary(lmer(perC_2013~macro250+(1|block),data=carbon_seq))
+
+ggplot(data=carbon_seq,aes(x=macro250,y=perC_2013,color=as.factor(block)))+
+  geom_point(size=2)+geom_smooth(method="lm",se=F,linewidth=2)
+```
+
+```{r soil_macro_final, warning = F, message = F}
+## note that these relationships would be significant/marginal in the absence
+## of the block random intercept
+summary(lmer(soilC_2019~macro250+(1|block),data=carbon_seq))
+summary(lmer(perC_2019~macro250+(1|block),data=carbon_seq))
+
+ggplot(data=carbon_seq,aes(x=macro250,y=perC_2019,color=as.factor(block)))+
+  geom_point(size=2)+geom_smooth(method="lm",se=F,linewidth=2)
+```
+
+```{r soil_macro_change, warning = F, message = F}
+## when looking at change in soil C, the block effect reaches a singular fit
+summary(lm(soilC~macro250,data=carbon_seq))
+
+ggplot(data=carbon_seq,aes(x=macro250,y=soilC,color=as.factor(block)))+
+  geom_point(size=2)+geom_smooth(method="lm",se=F,linewidth=2)
+```
+
+These plots offer scant evidence that macroaggregates have much relation to soil C. To the extent that there appears to be a relationship across the full dataset, it appears largely driven by the fact that Block 1 has higher macroaggregates than Block 3 in particular, and greater initial and final percent C than Blocks 2 and 3. (These differences in percent C are largely offset by lower bulk density when calculating the top 20 cm C pool, such that there remain no post-treatment block differences in soil C pools or soil.) This block-level variation might prompt us to look more closely at macroaggregates across blocks:
+
+```{r macro_block, echo = F, warning = F, message = F}
+ggplot(data=carbon_seq,aes(x=as.factor(block),y=macro250))+
+  geom_boxplot()+geom_point()+
+  theme_bw()
+```
+
+Indeed, Block 3 has a much lower macroaggregate fraction than the other two.
+
+Macroaggregates are commonly associated with the ability to retain moisture, so we can test the relationship between macroaggregates and soil moisture.
+
+```{r moisture_macro, warning = F, message = F}
+summary(lmer(soil_moisture~macro250+(1|block),data=carbon_seq))
+
+ggplot(data=carbon_seq,aes(x=macro250,y=soil_moisture,color=as.factor(block)))+
+  geom_point(size=2)+geom_smooth(method="lm",se=F,linewidth=2)
+```
+
+```{r moisture_macro_check,fig.height = 8, echo = F}
+check_model(lmer(soil_moisture~macro250+(1|block),data=carbon_seq))
+```
+
+There is evidently a close relationship between soil moisture and macroaggregate fraction. What else is related to soil moisture? Although soil C and macroaggregates are not related, it turns out that soil C and soil moisture are, based on pools (or percent C) in both 2013 and 2019:
+
+```{r moisture_soilCpool, warning = F, message = F}
+## this also yields positive relationships using initial and 2019 percent C
+summary(lmer(soil_moisture~soilC_2013+(1|block),data=carbon_seq))
+summary(lmer(soil_moisture~soilC_2019+(1|block),data=carbon_seq))
+
+ggplot(data=carbon_seq,aes(x=soilC_2019,y=soil_moisture,color=as.factor(block)))+
+  geom_point(size=2)+geom_smooth(method="lm",se=F,linewidth=2)
+```
+
+```{r moisture_soilCpool_check,fig.height = 8}
+check_model(lmer(soil_moisture~soilC_2019+(1|block),data=carbon_seq))
+```
+
+However, there is no relationship between soil moisture and soil C accumulation.
+
+```{r moisture_soilC, warning = F, message = F}
+summary(lmer(soil_moisture~soilC+(1|block),data=carbon_seq))
+
+ggplot(data=carbon_seq,aes(x=soilC,y=soil_moisture,color=as.factor(block)))+
+  geom_point(size=2)+geom_smooth(method="lm",se=F,linewidth=2)
+```
+
+We also measured soil pH, which is not correlated with soil moisture but is correlated with macroaggregates.
+
+```{r moisture_pH, warning = F, message = F}
+## block random intercept yields singular fit
+summary(lm(pH~soil_moisture,data=carbon_seq))
+
+ggplot(data=carbon_seq,aes(x=soil_moisture,y=pH,color=as.factor(block)))+
+  geom_point(size=2)+geom_smooth(method="lm",se=F,linewidth=2)
+```
+
+```{r macro_pH, warning = F, message = F}
+## block random intercept yields singular fit
+summary(lm(pH~macro250,data=carbon_seq))
+
+ggplot(data=carbon_seq,aes(x=macro250,y=pH,color=as.factor(block)))+
+  geom_point(size=2)+geom_smooth(method="lm",se=F,linewidth=2)
 ```
 
 ## Carbon accumulation and biodiversity facets
@@ -52,7 +258,7 @@ One of the core goals of our paper is to show how carbon storage in our experime
 * soil (0-20 cm)--expressed as change from pre-treatment soil carbon
 * fine roots (0-20 cm)
 
-Besides these pools, we also calculated overyielding for mixture plots as the difference between the observed pools and monoculture-based expectations. For aboveground wood, we further partitioned overyielding using into complementarity and selection effects, following Loreau & Hector (2001).
+Besides these pools, we also calculated overyielding for mixture plots as the difference between the observed pools and monoculture-based expectations. For aboveground wood, we further partitioned overyielding into complementarity and selection effects following Loreau & Hector (2001).
 
 We considered three facets of diversity:
 
@@ -60,9 +266,9 @@ We considered three facets of diversity:
 * Laliberté and Legendre (2010)'s functional dispersion (FDis), as reported by Grossman et al. (2017)
 * Helmus et al. (2007)'s phylogenetic species variability (PSV), as reported by Grossman et al. (2017)
 
-The latter two are metrics of functional and phylogenetic diversity that are designed not to be dependent on species richness. However, since PSV and FDis are both 0 for monocultures, they do end up somewhat correlated with each other and with species richness. As we will see, multicollinearity does not end up being a severe problem in most cases.
+The latter two are metrics of functional and phylogenetic diversity that are designed not to be dependent on species richness. However, FDis and PSV are both 0 for monocultures--by default for FDis and as an analysis choice for PSV. As a result, they do end up somewhat correlated with each other and with species richness. As we will see, multicollinearity does not end up being a severe problem in most cases.
 
-In keeping with the dominant paradigm in biodiversity-ecosystem function (BEF) research, we proposed that planted tree diversity would positively influence all three carbon pools. However, we did not pose hypotheses about which specific aspects of tree diversity would matter most. As a result, we used an AICc-based framework to test all models nested within a model that includes species richness, FDis, and PSV. We select the most parsimonious model with a $\Delta AICc<2$ from the model with the lowest AICc. (In effect, this is much like standard null hypothesis significance testing, where $AICc<2$ corresponds to $p>0.05$.) When there are two or more equally parsimonious such models, we selected the one with the lower AICc.
+In keeping with the dominant paradigm in biodiversity-ecosystem function (BEF) research, we proposed that planted tree diversity would positively influence all three carbon pools. However, we did not pose hypotheses about which specific facets of tree diversity would matter most. As a result, we used an AICc-based framework to test all models nested within a model that includes species richness, FDis, and PSV. We select the most parsimonious model with a $\Delta AICc<2$ from the model with the lowest AICc. (In effect, this is much like standard null hypothesis significance testing, where $AICc<2$ corresponds to $p>0.05$.) When there are two or more equally parsimonious such models, we selected the one with the lower AICc.
 
 ### Aboveground carbon
 
@@ -82,7 +288,7 @@ options(na.action = "na.omit")
 # summary(model.avg(mwt_dredge, subset = delta <= 2))
 ```
 
-The `dredge` function tests all nested submodels of the specified model. Here we apply it to models both with and without block random effects. There are three blocks in the FAB1 experiment. The block effect tends to either yield a singular fit or negligible changes in model parameters--the exceptions being in analyses of macroaggregates or soil moisture. As a result, we generally do not show the output of models with the block random effect.
+The `dredge` function tests all nested submodels of the specified model. Here we apply it to models both with and without random intercepts for block. There are three blocks in the FAB1 experiment. The block effect tends to either yield a singular fit or negligible changes in model parameters--the exceptions being in analyses of macroaggregates or soil moisture. As a result, we generally do not show the output of models with the block random effect.
 
 We can examine our AIC table, select our 'best' model, and do some basic checks of model assumptions as follows:
 
@@ -94,7 +300,7 @@ check_model(mwt_model)
 
 A few things are apparent here. First of all, the two retained predictors (FDis and PSV) have opposite-sign coefficients. These predictors have a positive correlation with each other across the full dataset, as shown below:
 
-```{r FDis_PSV}
+```{r FDis_PSV, echo=F}
 plot(jitter(PSV,factor=50)~jitter(FDis,factor=50),data=carbon_seq)
 ```
 
@@ -139,7 +345,7 @@ mw_model<-get.models(mw_dredge, subset = 1)[[1]]
 check_model(mw_model)
 ```
 
-Robust regression tends to shrink parameter estimates slightly, but yields a qualitatively very similar model.
+Robust regression tends to shrink parameter estimates slightly here, but yields a qualitatively very similar model.
 
 Overyielding is often partitioned via Loreau & Hector (2001)'s method into complementarity and selection effects. Complementarity effects (CE) are based on the mean of species' *relative* yields and are often taken to indicate synergistic interactions like niche partitioning or facilitation. Selection (SE) effects describe how more productive species tend to show greater (or lesser) relative boosts in productivity than average in mixtures. Although CE and SE must sum to overyielding, it is possible for one to be greater than overyielding (or even total plot biomass) if the other is negative. (It is also possible for total overyielding to be negative, in which case it may be called underyielding.) Although CE and SE are expressed in the same units as overyielding (here, kg biomass per ha), it can be hard to make sense of extreme CE or SE values in these terms. For these reasons, we choose to focus on whether they are generally positive or negative than on their actual magnitudes. Starting with the Loreau & Hector (2001) paper itself, it is common for BEF researchers to expect positive CE and non-positive SE on average across plots. This would imply that (1) species tend to overperform in mixture and (2) it is not only the most productive species that overperform in mixture. It may help to look at the data quickly before proceeding.
 
@@ -148,7 +354,7 @@ plot(woodyCE~species_richness,data=carbon_seq_woodyOY)
 plot(woodySE~species_richness,data=carbon_seq_woodyOY)
 ```
 
-These plots reveal that there are a couple outliers with highly positive CE and negative SE. The most extreme are plots 14 and 50, both 12-species plots. Because of the odd distribution of CE and SE values, we'll conduct both a parametric t-test and a non-parametric Wilcoxon rank sum test to check whether CE or SE differ from 0. Most research does not consider how inferences about CE or SE are influenced by skewed distribution or influential points, so the t-test is probably more consistent with how results are usually reported. However, the Wilcoxon test may be more appropriate.
+These plots reveal that there are a couple outliers with highly positive CE and negative SE. The most extreme are plots 14 and 50, both 12-species plots. Because of the odd distribution of CE and SE values, we'll conduct both a parametric t-test and a non-parametric Wilcoxon rank sum test to check whether CE or SE differ from 0. Most research does not concern itself with whether inferences about CE or SE are driven by extreme values, so the t-test is probably more consistent with how results are usually reported. However, the Wilcoxon test may be more appropriate given what we see in the plots above.
 
 ```{r CESE_tests}
 t.test(carbon_seq_woodyOY$woodyCE)
@@ -304,4 +510,13 @@ check_model(lmer(macro250~percentAM+percentCon+(1|block),data=carbon_seq_standar
 check_model(lm(soilC~species_richness+percentAM+woodyC+macro250,data=carbon_seq_standard))
 ```
 
-Each of these plots looks reasonably good.
+Each of these plots looks reasonably good. There is no particular need to fit a more minimal model that only retains significant terms, but if we did, it would look like this:
+
+```{r SEM_min, warning=F}
+localfit_min_model<-psem(
+  lmer(woodyC~species_richness+percentCon+percentAM+(1|block),data=carbon_seq_standard),
+  lmer(macro250~percentCon+(1|block),data=carbon_seq_standard),
+  lm(soilC~species_richness+percentAM,
+     data=carbon_seq_standard)
+)
+```
