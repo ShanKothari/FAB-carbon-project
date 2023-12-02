@@ -20,7 +20,7 @@ knitr::opts_knit$set(root.dir = "C:/Users/querc/Dropbox/FABCarbonProject/Process
 
 ## Setting up the workspace
 
-This document is meant to provide a narrative summary to the statistical analyses accompanying the manuscript "Independent effects of tree diversity on aboveground and soil carbon pools after six years of experimental afforestation" by Bryant et al. (in review, as of `r Sys.Date()`).
+This document is meant to provide a narrative summary to the statistical analyses accompanying the manuscript "Independent effects of tree diversity on aboveground and soil carbon pools after six years of experimental afforestation" by Bryant et al. (in review, as of `r Sys.Date()`). We show the R output from the models in the manuscript and test the validity of various statistical assumptions underlying our model choices. In cases when these assumptions are violated, we perform robustness checks to show at the very least that the qualitative structure of the models is supported, and to assess the plausible variation in parameter estimates. Because this document is only meant for the technical purpose of supporting the adequacy of our statistical analyses, we do not in general make much attempt to present outputs cleanly, which would take considerable effort. For example, units are generally omitted from axis labels; readers are advised to look to the main text or the metadata accompanying the data repository for them.
 
 Our first step is to load a number of packages. Although this paper was a collaborative work in which multiple co-authors were working in their own R environments, all results have been checked under the package numbers listed in *R v.4.2.1*.
 
@@ -39,7 +39,9 @@ library(ggplot2) ## 3.4.2
 
 Next, we go to the working directory where we saved the archived data file and read it in.
 
+<!-- include a URL and DOI where the data can be downloaded -->
 <!-- note: we should change the name of this file -->
+<!-- also include a URL and DOI for the GitHub / Zenodo repository housing this walkthrough -->
 
 ```{r read}
 # setwd(".")
@@ -247,6 +249,58 @@ ggplot(data=carbon_seq,aes(x=soil_moisture,y=pH,color=as.factor(block)))+
 summary(lm(pH~macro250,data=carbon_seq))
 
 ggplot(data=carbon_seq,aes(x=macro250,y=pH,color=as.factor(block)))+
+  geom_point(size=2)+geom_smooth(method="lm",se=F,linewidth=2)
+```
+
+```{r macro_pH_check,fig.height = 8}
+check_model(lm(pH~macro250,data=carbon_seq))
+```
+
+As it turns out, soil pH is associated with both greater soil C pools in 2019 (but not 2013) and greater soil C accumulation.
+
+```{r soilC_pH, warning = F, message = F}
+## block random intercept yields singular fit
+summary(lm(pH~soilC,data=carbon_seq))
+ggplot(data=carbon_seq,aes(x=soilC,y=pH,color=as.factor(block)))+
+  geom_point(size=2)+geom_smooth(method="lm",se=F,linewidth=2)
+
+## block random intercept yields singular fit
+summary(lm(pH~soilC_2019,data=carbon_seq))
+ggplot(data=carbon_seq,aes(x=soilC_2019,y=pH,color=as.factor(block)))+
+  geom_point(size=2)+geom_smooth(method="lm",se=F,linewidth=2)
+## this model with the 2019 C pool may be
+## influenced by a high-leverage point (plot 12)
+```
+
+```{r soilC_pH_check,fig.height = 8}
+check_model(lm(pH~soilC,data=carbon_seq))
+check_model(lm(pH~soilC_2019,data=carbon_seq))
+```
+
+Are any of macroaggregates, soil moisture, or pH influenced by tree species richness? Apparently not, as shown below.
+
+```{r soil_richness, warning = F, message = F}
+summary(lmer(macro250~species_richness+(1|block),data=carbon_seq))
+ggplot(data=carbon_seq,aes(x=species_richness,y=macro250,color=as.factor(block)))+
+  geom_point(size=2)+geom_smooth(method="lm",se=F,linewidth=2)
+## we note in passing that there appear to be multiple influential observations here
+## that may influence these results, but examining the plots it strikes us as unlikely
+## that any alternate 'more appropriate' model would return a significant relationship
+
+summary(lmer(soil_moisture~species_richness+(1|block),data=carbon_seq))
+ggplot(data=carbon_seq,aes(x=species_richness,y=soil_moisture,color=as.factor(block)))+
+  geom_point(size=2)+geom_smooth(method="lm",se=F,linewidth=2)
+
+summary(lm(pH~species_richness,data=carbon_seq)) ## singular fit with block
+ggplot(data=carbon_seq,aes(x=species_richness,y=pH,color=as.factor(block)))+
+  geom_point(size=2)+geom_smooth(method="lm",se=F,linewidth=2)
+```
+
+Lastly we might wonder whether macroaggregates (or soil moisture, or pH) are correlated with fine root C. Once again, the answer is no: we show this for macroaggregates below.
+
+```{r macro_root, warning = F, message = F}
+summary(lmer(macro250~rootC+(1|block),data=carbon_seq))
+ggplot(data=carbon_seq,aes(x=rootC,y=macro250,color=as.factor(block)))+
   geom_point(size=2)+geom_smooth(method="lm",se=F,linewidth=2)
 ```
 
