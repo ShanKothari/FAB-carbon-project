@@ -20,7 +20,9 @@ knitr::opts_knit$set(root.dir = "C:/Users/querc/Dropbox/FABCarbonProject/Process
 
 ## Setting up the workspace
 
-This document is meant to provide a narrative summary to the statistical analyses accompanying the manuscript "Independent effects of tree diversity on aboveground and soil carbon pools after six years of experimental afforestation" by Bryant et al. (in review, as of `r Sys.Date()`). We show the R output from the models in the manuscript and test the validity of various statistical assumptions underlying our model choices. In cases when these assumptions are violated, we perform robustness checks to show at the very least that the qualitative structure of the models is supported, and to assess the plausible variation in parameter estimates. Because this document is only meant for the technical purpose of supporting the adequacy of our statistical analyses, we do not in general make much attempt to present outputs cleanly, which would take considerable effort. For example, units are generally omitted from axis labels; readers are advised to look to the main text or the metadata accompanying the data repository for them.
+This document is meant to provide a narrative summary to the statistical analyses accompanying the manuscript "Independent effects of tree diversity on aboveground and soil carbon pools after six years of experimental afforestation" by Bryant et al. (in review, as of `r Sys.Date()`). We show the R output from the models in the manuscript and test the validity of various statistical assumptions underlying our model choices. In cases when these assumptions are violated, we perform robustness checks to show at the very least that the qualitative structure of the models is supported, and to assess the plausible variation in parameter estimates.
+
+Because this document is only meant for the technical purpose of supporting the adequacy of our statistical analyses, we do not in general make much attempt to present output in a polished form. For example, units are generally omitted from axis labels; readers are advised to look to the main text or the metadata accompanying the data repository for them. We note briefly that, as is standard in R Markdown, all figures correspond to the blocks of code that *precede* them, even if those blocks are on the previous page.
 
 Our first step is to load a number of packages. Although this paper was a collaborative work in which multiple co-authors were working in their own R environments, all results have been checked under the package numbers listed in *R v.4.2.1*.
 
@@ -35,6 +37,7 @@ library(performance) ## 0.10.5
 library(piecewiseSEM) ## 2.3.0
 library(MASS) ## 7.3.57
 library(ggplot2) ## 3.4.2
+library(emmeans) ## 1.8.5
 ```
 
 Next, we go to the working directory where we saved the archived data file and read it in.
@@ -516,17 +519,88 @@ PSV is still the only variable selected, but its parameter estimate shrinks quit
 
 ## Tree composition and soil C accumulation
 
-In this section we first test the influence of leaf type and genus on soil C accumulation.
+In this section we first test the influence of leaf type and genus on soil C accumulation:
 
 ```{r leaf_genus_soilC}
-
 anova(lm(soilC~leaf_type,data=carbon_seq))
 ## one could run the following to incorporate the block effect
 # anova(lmer(soilC~leaf_type+(1|block),data=carbon_seq))
 # but it's a singular fit here
 
+## only comparing Quercus and Pinus plots
 anova(lm(soilC~major_genus,data=subset(carbon_seq,major_genus!="N")))
 ```
+
+And the same for root C:
+
+```{r leaf_genus_rootC}
+anova(lm(rootC~leaf_type,data=carbon_seq))
+anova(lm(rootC~major_genus,data=subset(carbon_seq,major_genus!="N")))
+```
+
+These outputs reveal no differences in soil or root C based on leaf type or genus (*Quercus* vs. *Pinus*). However, we do report that both influence macroaggregates:
+
+```{r leaf_genus_macro}
+macro_leaf<-lmer(macro250~leaf_type+(1|block),data=carbon_seq)
+anova(macro_leaf)
+pairs(emmeans(macro_leaf,specs=~leaf_type))
+## strong evidence that conifer and deciduous plots differ
+
+macro_genus<-lmer(macro250~major_genus+(1|block),data=subset(carbon_seq,major_genus!="N"))
+anova(macro_genus)
+```
+
+We can check the diagnostic plots of both models as well:
+
+```{r leaf_genus_macro_check,fig.height=8}
+check_model(macro_leaf)
+check_model(macro_genus)
+```
+
+And the same for soil moisture:
+
+```{r leaf_genus_moisture}
+moisture_leaf<-lmer(soil_moisture~leaf_type+(1|block),data=carbon_seq)
+anova(moisture_leaf)
+pairs(emmeans(moisture_leaf,specs=~leaf_type))
+## strong evidence that conifer and deciduous plots differ
+## as well as 'both' vs conifer
+
+moisture_genus<-lmer(soil_moisture~major_genus+(1|block),data=subset(carbon_seq,major_genus!="N"))
+anova(moisture_genus)
+```
+
+```{r leaf_genus_moisture_check,fig.height=8}
+check_model(moisture_leaf)
+check_model(moisture_genus)
+```
+
+Lastly, we explore the effects of mycotype on soil properties. Here, we *do* see an effect on soil C accumulation:
+
+```{r soilC_myco,fig.height=8}
+## block effect once again singular
+soilC_myco<-lm(soilC~mycotype,data=carbon_seq)
+anova(soilC_myco)
+pairs(emmeans(soilC_myco,specs=~mycotype))
+## no pairwise contrasts are significant
+
+check_model(soilC_myco)
+```
+
+But not on macroaggregates or root C:
+
+```{r rootC_myco,fig.height=8}
+## block effect once again singular
+## log-transforming root C does not change results
+rootC_myco<-lm(rootC~mycotype,data=carbon_seq)
+anova(rootC_myco)
+```
+
+```{r macro_myco,fig.height=8}
+macro_myco<-lmer(macro250~mycotype+(1|block),data=carbon_seq)
+anova(macro_myco)
+```
+
 
 ## Structural equation modeling
 
