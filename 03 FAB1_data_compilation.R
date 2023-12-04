@@ -78,7 +78,7 @@ C_sp_plot<-aggregate(C_estimate~species_code+plot+block,
 ## generate indicators of species composition
 FABplot_list<-split(FABdata_mod,f = FABdata_mod$plot)
 FABplot_comp<-unlist(lapply(FABplot_list,function(plot) paste(unique(plot$species_code),collapse="|")))
-C_sp_plot$sp_comp<-FABplot_comp[match(C_sp_plot$plot,names(FABplot_comp))]
+C_sp_plot$species_composition<-FABplot_comp[match(C_sp_plot$plot,names(FABplot_comp))]
 
 ## estimate fractions of each species in each plot
 ## fulcrum_id is just a haphazardly chosen (and irrelevant) variable
@@ -93,7 +93,7 @@ sum(counts$species_code==C_sp_plot$species_code & counts$plot==C_sp_plot$plot)
 C_sp_plot$fractions<-counts$fractions
 
 ## now we use pdiv to carry out the additive partitioning
-C_partition<-addpart(C_estimate~sp_comp/species_code+plot,
+C_partition<-addpart(C_estimate~species_composition/species_code+plot,
                      fractions= ~fractions,
                      groups= ~block,
                      data=C_sp_plot)
@@ -101,7 +101,8 @@ C_partition<-addpart(C_estimate~sp_comp/species_code+plot,
 ## pdiv's calculations can be verified manually
 # C_sp_plot$mono.means<-apply(C_sp_plot,1,
 #                             function(x) {
-#                               C_sp_plot$C_estimate[C_sp_plot$sp_comp==x["species_code"] & C_sp_plot$block==x["block"]]
+#                               C_sp_plot$C_estimate[C_sp_plot$species_composition==x["species_code"] & 
+#                                                      C_sp_plot$block==x["block"]]
 #                             })
 # C_sp_plot$mono.exp<-C_sp_plot$mono.means*C_sp_plot$fractions
 # C_sp_plot$RY_Oi<-C_sp_plot$C_estimate/C_sp_plot$mono.means
@@ -195,11 +196,11 @@ belowground$rootC<-belowground$Roots.Dry.Mass/(5*2.54^2*pi)*10000*10000*0.5/1000
 ## these plots weren't actually sampled
 belowground$rootC[belowground$Plot %in% c(60,76,96,114)]<-NA
 
-sp_comp<-belowground[,c("Plot","Sp.Richness","block","soilC","rootC",
-                        "ACNE","ACRU","BEPA","JUVI",
-                        "PIBA","PIRE","PIST","QUAL",
-                        "QUEL","QUMA","QURU","TIAM")]
-sp_comp_long<-melt(sp_comp,id.vars = c("Plot","Sp.Richness","block","soilC","rootC"))
+sp_comp_df<-belowground[,c("Plot","Sp.Richness","block","soilC","rootC",
+                           "ACNE","ACRU","BEPA","JUVI",
+                           "PIBA","PIRE","PIST","QUAL",
+                           "QUEL","QUMA","QURU","TIAM")]
+sp_comp_long<-melt(sp_comp_df,id.vars = c("Plot","Sp.Richness","block","soilC","rootC"))
 
 ## attach monoculture values from the same species and block
 sp_comp_long$mono_soil<-unlist(apply(sp_comp_long,1,function(x) {
@@ -236,9 +237,9 @@ belowground_sub<-belowground[-which(belowground$Sp.Richness==1),]
 C_agg$block<-plot_guide$Block[match(C_agg$plot,plot_guide$Plot)]
 
 ## species composition
-C_agg$sp_comp<-FABplot_comp[match(C_agg$plot,names(FABplot_comp))]
-C_agg$mono_sp<-FABplot_comp[match(C_agg$plot,names(FABplot_comp))]
-C_agg$mono_sp[which(C_agg$species_richness>1)]<-NA
+C_agg$species_composition<-FABplot_comp[match(C_agg$plot,names(FABplot_comp))]
+C_agg$monoculture_species<-FABplot_comp[match(C_agg$plot,names(FABplot_comp))]
+C_agg$monoculture_species[which(C_agg$species_richness>1)]<-NA
 
 ## AG woody OY, CE, and SE
 C_agg$woodyOY<-OY.agg$ind.OY[match(C_agg$plot,OY.agg$plot)]
@@ -275,6 +276,7 @@ C_agg$totalOY<-C_agg$woodyOY+C_agg$soilOY+C_agg$rootOY
 
 ## macroaggregates, soil moisture, and pH
 C_agg$macro250<-belowground$X..Mass.of.250[belowground_match]
+C_agg$macro53<-belowground$X..Mass.of.53[belowground_match]
 C_agg$soil_moisture<-belowground$Soil.moisture[belowground_match]
 C_agg$pH<-belowground$pH[belowground_match]
 
@@ -300,4 +302,4 @@ C_agg$leaf_type<-ifelse(C_agg$percentCon==0,"D",
 ## entirely Pinus (P), Quercus (Q), or neither (N)?
 C_agg$major_genus<-FAB_planted$major_genus[match(C_agg$plot,FAB_planted$plot)]
 
-write.csv(C_agg,"ProcessedData/Cseq.csv",row.names = F)
+write.csv(C_agg,"ProcessedData/carbon_sequestration.csv",row.names = F)
