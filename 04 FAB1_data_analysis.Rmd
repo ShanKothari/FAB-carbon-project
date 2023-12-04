@@ -106,12 +106,20 @@ check_model(lm(soilC~woodyC,data=carbon_seq))
 
 It is clear that there is no relationship between the two variables. However, as we report in the paper, if we subset the data to monoculture plots only, we see a significant interaction between species ID and aboveground C on soil C.
 
-<!-- this needs to be filled in... we don't have monoculture species ID in the data frame -->
 ```{r soil_wood_mono, warning = F, message = F}
-carbon_seq_mono<-subset(carbon_seq,species_richness==1)
-## summary(aov(soilC~woodyC*species,data=carbon_seq_mono))
-# ggplot(data=carbon_seq,aes(x=woodyC,y=soilC,color=as.factor(block)))+
-#   geom_point(size=2)+geom_smooth(method="lm",se=F,linewidth=2)
+summary(aov(soilC~woodyC*mono_sp,data=carbon_seq))
+ggplot(data=carbon_seq[which(!is.na(carbon_seq$mono_sp)),],
+       aes(x=woodyC,y=soilC,color=mono_sp))+
+  geom_point(size=2)+geom_smooth(method="lm",se=F,linewidth=2)
+```
+
+```{r soil_wood_mono_check,fig.height=8}
+check_model(aov(soilC~log(woodyC)*mono_sp,data=carbon_seq))
+## note that although the VIFs here seem astronomical, the
+## generalized VIFs implemented with the vif() function in package
+## car are much more suitable for multilevel categorical data
+vif(aov(soilC~log(woodyC)*mono_sp,data=carbon_seq))
+## moderately high but much less worrisome!
 ```
 
 Lastly, we look at the third pool we measured: fine root C. First of all, how does fine root C relate to soil C accumulation?
@@ -503,6 +511,16 @@ mr_robust_dredge
 ```
 
 PSV is still the only variable selected, but its parameter estimate shrinks quite a bit.
+
+## Tree composition and soil C accumulation
+
+In this section we first test the influence of leaf type and genus on soil C accumulation.
+
+<!-- no genus variable yet -->
+```{r leaf_genus_soilC}
+
+summary(aov(soilC~leaf_type,data=carbon_seq))
+```
 
 ## Structural equation modeling
 
