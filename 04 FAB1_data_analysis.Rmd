@@ -48,7 +48,7 @@ Next, we go to the working directory where we saved the archived data file and r
 
 ```{r read}
 # setwd(".")
-carbon_seq<-read.csv("Cseq.csv")
+carbon_seq<-read.csv("carbon_sequestration.csv")
 ```
 
 ## Relationships among aboveground, soil, and fine root carbon
@@ -112,18 +112,18 @@ check_model(lm(soilC~woodyC,data=carbon_seq))
 It is clear that there is no relationship between the two variables. However, as we report in the paper, if we subset the data to monoculture plots only, we see a significant interaction between species ID and aboveground C on soil C.
 
 ```{r soil_wood_mono, warning = F, message = F}
-summary(aov(soilC~woodyC*mono_sp,data=carbon_seq))
-ggplot(data=carbon_seq[which(!is.na(carbon_seq$mono_sp)),],
-       aes(x=woodyC,y=soilC,color=mono_sp))+
+summary(aov(soilC~woodyC*monoculture_species,data=carbon_seq))
+ggplot(data=carbon_seq[which(!is.na(carbon_seq$monoculture_species)),],
+       aes(x=woodyC,y=soilC,color=monoculture_species))+
   geom_point(size=2)+geom_smooth(method="lm",se=F,linewidth=2)
 ```
 
 ```{r soil_wood_mono_check,fig.height=8}
-check_model(aov(soilC~log(woodyC)*mono_sp,data=carbon_seq))
+check_model(aov(soilC~log(woodyC)*monoculture_species,data=carbon_seq))
 ## note that although the VIFs here seem astronomical, the
 ## generalized VIFs implemented with the vif() function in package
 ## car are much more suitable for multilevel categorical data
-vif(aov(soilC~log(woodyC)*mono_sp,data=carbon_seq))
+vif(aov(soilC~log(woodyC)*monoculture_species,data=carbon_seq))
 ## moderately high but much less worrisome!
 ```
 
@@ -317,7 +317,7 @@ ggplot(data=carbon_seq,aes(x=rootC,y=macro250,color=as.factor(block)))+
   geom_point(size=2)+geom_smooth(method="lm",se=F,linewidth=2)
 ```
 
-## Carbon accumulation and biodiversity facets
+## Tree biodiversity effects on above- and belowground C accumulation
 
 One of the core goals of our paper is to show how carbon storage in our experimental plots was influenced by the diversity of planted trees in the first six years of the experiment. We estimated carbon storage across three pools:
 
@@ -601,8 +601,30 @@ macro_myco<-lmer(macro250~mycotype+(1|block),data=carbon_seq)
 anova(macro_myco)
 ```
 
+## Microbial composition and soil C accumulation
 
-## Structural equation modeling
+First we read in the data from Grossman et al. (2019), available at DOI [https://doi.org/10.6073/pasta/3918fe1d3aab00ab73c4a83372cb82cf](10.6073/pasta/3918fe1d3aab00ab73c4a83372cb82cf) or [https://portal.edirepository.org/nis/mapbrowse?scope=knb-lter-cdr&identifier=683](this link).
+
+```{r readPLFAs}
+PLFA<-read.table("e271_Soil lipid (P_NLFA) and AMF (spore and sequence) data from selected plots.txt",
+                 sep="\t", header=T)
+
+```
+
+For convenience, we will attach the PLFA data to the main data frame.
+
+```{r attachPLFAs}
+PLFA_match<-match(carbon_seq$plot,PLFA$Community)
+carbon_seq$gram_pos_pct<-PLFA$gram_pos_pct[PLFA_match]
+carbon_seq$X16.1_w5c.nm<-PLFA$X16.1_w5c.nm[PLFA_match]
+## we attach remaining columns in an unseen code block
+```
+
+```{r attachPLFAs_2, include=F}
+
+```
+
+## Structural equation modeling of aboveground and soil C
 
 We use structural equation modeling (SEM) to tie together our hypotheses in a more integrative manner. Although we found no evidence elsewhere for a correlation between aboveground and soil C accumulation, SEMs allow us to directly test whether the influence of species richness on soil C accumulation is mediated by aboveground C.
 
