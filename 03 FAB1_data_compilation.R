@@ -132,6 +132,11 @@ FAB_planted[which(is.na(FAB_planted),arr.ind=T)]<-0
 FAB_planted$percentAM<-rowSums(FAB_planted[,c("ACNE","ACRU","JUVI")],na.rm=T)
 FAB_planted$percentCon<-rowSums(FAB_planted[,c("JUVI","PIBA","PIRE","PIST")],na.rm=T)
 
+FAB_planted$percentQuercus<-rowSums(FAB_planted[,c("QUAL","QUEL","QUMA","QURU")])
+FAB_planted$percentPinus<-rowSums(FAB_planted[,c("PIBA","PIRE","PIST")])
+FAB_planted$major_genus<-ifelse(FAB_planted$percentPinus>0.99,"P",
+                                ifelse(FAB_planted$percentQuercus>0.99,"Q","N"))
+
 #############################
 ## add light data from 2018 (just for context)
 
@@ -230,6 +235,11 @@ belowground_sub<-belowground[-which(belowground$Sp.Richness==1),]
 
 C_agg$block<-plot_guide$Block[match(C_agg$plot,plot_guide$Plot)]
 
+## species composition
+C_agg$sp_comp<-FABplot_comp[match(C_agg$plot,names(FABplot_comp))]
+C_agg$mono_sp<-FABplot_comp[match(C_agg$plot,names(FABplot_comp))]
+C_agg$mono_sp[which(C_agg$species_richness>1)]<-NA
+
 ## AG woody OY, CE, and SE
 C_agg$woodyOY<-OY.agg$ind.OY[match(C_agg$plot,OY.agg$plot)]
 C_agg$woodyCE<-C_partition$CE.C_estimate[match(C_agg$plot,C_partition$plot)]
@@ -268,16 +278,16 @@ C_agg$macro250<-belowground$X..Mass.of.250[belowground_match]
 C_agg$soil_moisture<-belowground$Soil.moisture[belowground_match]
 C_agg$pH<-belowground$pH[belowground_match]
 
-## planted proportions of AM and coniferous trees
-C_agg$percentAM<-FAB_planted$percentAM[match(C_agg$plot,FAB_planted$plot)]
-C_agg$percentCon<-FAB_planted$percentCon[match(C_agg$plot,FAB_planted$plot)]
-
 ## functional and phylogenetic diversity
 FD<-read.csv("OriginalData/ecy1958-sup-0003-tables1.csv")
 C_agg$PSV<-FD$PSV[match(C_agg$plot,FD$Plot)]
 C_agg$FDis<-FD$FDis[match(C_agg$plot,FD$Plot)]
 ## optional step to set PSV to 0 in monocultures
 C_agg$PSV[C_agg$species_richness==1]<-0
+
+## planted proportions of AM and coniferous trees
+C_agg$percentAM<-FAB_planted$percentAM[match(C_agg$plot,FAB_planted$plot)]
+C_agg$percentCon<-FAB_planted$percentCon[match(C_agg$plot,FAB_planted$plot)]
 
 ## categorical leaf type and mycotype
 ## the 0.97 here is for plot 147
@@ -286,5 +296,8 @@ C_agg$mycotype<-ifelse(C_agg$percentAM==0,"E",
                        ifelse(C_agg$percentAM>0.97,"A","B"))
 C_agg$leaf_type<-ifelse(C_agg$percentCon==0,"D",
                         ifelse(C_agg$percentCon==1,"C","B"))
+
+## entirely Pinus (P), Quercus (Q), or neither (N)?
+C_agg$major_genus<-FAB_planted$major_genus[match(C_agg$plot,FAB_planted$plot)]
 
 write.csv(C_agg,"ProcessedData/Cseq.csv",row.names = F)
