@@ -50,6 +50,8 @@ carbon_seq<-read.csv("Cseq.csv")
 
 ## Relationships among aboveground, soil, and fine root carbon
 
+There are three blocks in the FAB1 experiment. Adding a random intercept for block in our models tends to either yield a singular fit or negligible changes in model parameters--the exceptions being in analyses of macroaggregates or soil moisture. (For most other variables, there really does seem to be little evidence that blocks systematically vary; however, three is also a very small number of levels for estimating a random effect variance.) We generally do not show the output of models with the block random effect if it results in a singular fit or in very small changes in parameter values.
+
 One of the first results presented in the paper is the relationship between soil C in 2013 (pre-treatment) and 2019.
 
 ```{r soil_C_legacy1, warning = F, message = F}
@@ -264,7 +266,7 @@ ggplot(data=carbon_seq,aes(x=macro250,y=pH,color=as.factor(block)))+
 check_model(lm(pH~macro250,data=carbon_seq))
 ```
 
-As it turns out, soil pH is associated with both greater soil C pools in 2019 (but not 2013) and greater soil C accumulation.
+As it turns out, soil pH is positively correlated both with soil C accumulation and (more weakly) with the soil C pool in 2019.
 
 ```{r soilC_pH, warning = F, message = F}
 ## block random intercept yields singular fit
@@ -350,7 +352,7 @@ options(na.action = "na.omit")
 # summary(model.avg(mwt_dredge, subset = delta <= 2))
 ```
 
-The `dredge` function tests all nested submodels of the specified model. Here we apply it to models both with and without random intercepts for block. There are three blocks in the FAB1 experiment. The block effect tends to either yield a singular fit or negligible changes in model parameters--the exceptions being in analyses of macroaggregates or soil moisture. As a result, we generally do not show the output of models with the block random effect.
+The `dredge` function tests all nested submodels of the specified model. Here we apply it to models both with and without block random intercepts.
 
 We can examine our AIC table, select our 'best' model, and do some basic checks of model assumptions as follows:
 
@@ -516,10 +518,14 @@ PSV is still the only variable selected, but its parameter estimate shrinks quit
 
 In this section we first test the influence of leaf type and genus on soil C accumulation.
 
-<!-- no genus variable yet -->
 ```{r leaf_genus_soilC}
 
-summary(aov(soilC~leaf_type,data=carbon_seq))
+anova(lm(soilC~leaf_type,data=carbon_seq))
+## one could run the following to incorporate the block effect
+# anova(lmer(soilC~leaf_type+(1|block),data=carbon_seq))
+# but it's a singular fit here
+
+anova(lm(soilC~major_genus,data=subset(carbon_seq,major_genus!="N")))
 ```
 
 ## Structural equation modeling
