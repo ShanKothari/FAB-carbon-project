@@ -173,14 +173,6 @@ belowground$BD[belowground$block==1]<-mean(BD_wide$BD[BD_wide$block==1])
 belowground$BD[belowground$block==2]<-mean(BD_wide$BD[BD_wide$block==2])
 belowground$BD[belowground$block==3]<-mean(BD_wide$BD[BD_wide$block==3])
 
-## 2013 C and N have a misleading degree of precision
-## and the last digits have some strange patterns
-## (most likely an instrument quirk of some sort)
-## due to the weighting procedure, the real minimum
-## increment is 0.0025%
-belowground$X.C_2013<-round(belowground$X.C_2013,digits=3)
-belowground$X.N_2013<-round(belowground$X.N_2013,digits=3)
-
 ## estimate accumulation of soil carbon
 ## first take the difference in percent
 ## (which assumes bulk density remains unchanged)
@@ -255,10 +247,16 @@ C_agg$woodyCE<-C_partition$CE.C_estimate[match(C_agg$plot,C_partition$plot)]
 C_agg$woodySE<-C_partition$SE.C_estimate[match(C_agg$plot,C_partition$plot)]
 
 ## percentages of soil C and N at beginning and end
+
+## 2013 C and N have a misleading degree of precision
+## and the last digits have some strange patterns
+## (most likely an instrument quirk of some sort)
+## due to the weighting procedure, the real minimum
+## increment is 0.0025%
 belowground_match<-match(C_agg$plot,belowground$Plot)
-C_agg$perC_2013<-belowground$X.C_2013[belowground_match]
+C_agg$perC_2013<-round(belowground$X.C_2013[belowground_match],digits=3)
 C_agg$perC_2019<-belowground$X..C_2019[belowground_match]
-C_agg$perN_2013<-belowground$X.N_2013[belowground_match]
+C_agg$perN_2013<-round(belowground$X.N_2013[belowground_match],digits=3)
 C_agg$perN_2019<-belowground$X..N_2019[belowground_match]
 
 ## bulk density at the block level
