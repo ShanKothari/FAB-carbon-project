@@ -247,10 +247,13 @@ C_agg$woodyCE<-C_partition$CE.C_estimate[match(C_agg$plot,C_partition$plot)]
 C_agg$woodySE<-C_partition$SE.C_estimate[match(C_agg$plot,C_partition$plot)]
 
 ## percentages of soil C and N at beginning and end
+## 2013 C and N have a misleading degree of precision
+## and the last digits have some strange patterns
+## (most likely an instrument quirk of some sort)
 belowground_match<-match(C_agg$plot,belowground$Plot)
-C_agg$perC_2013<-belowground$X.C_2013[belowground_match]
+C_agg$perC_2013<-round(belowground$X.C_2013[belowground_match],digits=2)
 C_agg$perC_2019<-belowground$X..C_2019[belowground_match]
-C_agg$perN_2013<-belowground$X.N_2013[belowground_match]
+C_agg$perN_2013<-round(belowground$X.N_2013[belowground_match],digits=2)
 C_agg$perN_2019<-belowground$X..N_2019[belowground_match]
 
 ## bulk density at the block level
