@@ -606,8 +606,7 @@ anova(macro_myco)
 First we read in the data from Grossman et al. (2019), available at DOI [https://doi.org/10.6073/pasta/3918fe1d3aab00ab73c4a83372cb82cf](10.6073/pasta/3918fe1d3aab00ab73c4a83372cb82cf) or [https://portal.edirepository.org/nis/mapbrowse?scope=knb-lter-cdr&identifier=683](this link).
 
 ```{r readPLFAs}
-PLFA<-read.table("e271_Soil lipid (P_NLFA) and AMF (spore and sequence) data from selected plots.txt",
-                 sep="\t", header=T)
+PLFA<-read.csv("FAB_AMF_Plots_V3.csv")
 
 ```
 
@@ -615,9 +614,26 @@ For convenience, we will attach the PLFA data to the main data frame.
 
 ```{r attachPLFAs}
 PLFA_match<-match(carbon_seq$plot,PLFA$Community)
+carbon_seq$X17.0_anteiso.pp<-PLFA$X17.0_anteiso.pp[PLFA_match]
+carbon_seq$X17.0_anteiso.pm<-PLFA$X17.0_anteiso.pm[PLFA_match]
+carbon_seq$X18.0_10me.pp<-PLFA$X18.0_10me.pp[PLFA_match]
+carbon_seq$X18.0_10me.pm<-PLFA$X18.0_10me.pm[PLFA_match] ## this one works
+carbon_seq$X18.1_w9t.pp<-PLFA$X18.1_w9t.pp[PLFA_match]
+carbon_seq$X18.1_w9t.pm<-PLFA$X18.1_w9t.pm[PLFA_match]
+carbon_seq$X18.2_w6.9c.pp<-PLFA$X18.2_w6.9c.pp[PLFA_match]
+carbon_seq$X18.2_w6.9c.pp<-PLFA$X18.2_w6.9c.pm[PLFA_match]
+
+carbon_seq$gen_fungi_pct<-PLFA$gen_fungi_pct[PLFA_match]
 carbon_seq$gram_pos_pct<-PLFA$gram_pos_pct[PLFA_match]
-carbon_seq$X16.1_w5c.nm<-PLFA$X16.1_w5c.nm[PLFA_match]
-## we attach remaining columns in an unseen code block
+carbon_seq$gram_neg_pct<-PLFA$gram_neg_pct[PLFA_match]
+carbon_seq$actinos_pct<-PLFA$actinos_pct[PLFA_match]
+
+carbon_seq$Biomass.pm<-PLFA$Biomass.pm[PLFA_match]
+carbon_seq$Biomass.nm<-PLFA$Biomass.nm[PLFA_match]
+
+
+carbon_seq$fungal.bacterial_mass<-PLFA$fungal.bacterial_mass[PLFA_match]
+carbon_seq$gram_neg.gram_post_mass<-PLFA$gram_neg.gram_post_mass[PLFA_match]
 ```
 
 ```{r attachPLFAs_2, include=F}
