@@ -631,7 +631,6 @@ carbon_seq$actinos_pct<-PLFA$actinos_pct[PLFA_match]
 carbon_seq$Biomass.pm<-PLFA$Biomass.pm[PLFA_match]
 carbon_seq$Biomass.nm<-PLFA$Biomass.nm[PLFA_match]
 
-
 carbon_seq$fungal.bacterial_mass<-PLFA$fungal.bacterial_mass[PLFA_match]
 carbon_seq$gram_neg.gram_post_mass<-PLFA$gram_neg.gram_post_mass[PLFA_match]
 ```
