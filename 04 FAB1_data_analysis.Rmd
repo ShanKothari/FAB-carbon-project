@@ -58,37 +58,36 @@ There are three blocks in the FAB1 experiment. Adding a random intercept for blo
 One of the first results presented in the paper is the relationship between soil C in 2013 (pre-treatment) and 2019.
 
 ```{r soil_C_legacy1, warning = F, message = F}
-## here we use initial and final percent C, although the results are similar
-## using initial and final soil C pools (which accounts for bulk density variation)
+## here we use initial and final soil C pools (which accounts for bulk density variation)
+## but results are similar using the percentages
 
 ## one can add a block random intercept here with lmer, adding +(1|block)
 ## however,  it doesn't change parameter values much
-summary(lm(perC_2019~perC_2013,data=carbon_seq))
+summary(lm(soilC_2019~soilC_2013,data=carbon_seq))
 
 ## in general, we plot separate regression lines for each block just to be
 ## able to check the generality within/among blocks more easily
 ## naturally, these do not correspond to the 'overall' best-fit line
-ggplot(data=carbon_seq,aes(x=perC_2013,y=perC_2019,color=as.factor(block)))+
+ggplot(data=carbon_seq,aes(x=soilC_2013,y=soilC_2019,color=as.factor(block)))+
   geom_point(size=2)+geom_smooth(method="lm",se=F,linewidth=2)
 ```
 
 ```{r soil_C_legacy1_check,fig.height = 8, echo = F}
-check_model(lm(perC_2019~perC_2013,data=carbon_seq))
+check_model(lm(soilC_2019~soilC_2013,data=carbon_seq))
 ```
 
-Despite a couple influential observations that declined in soil percent C, it's clear that pre-treatment and 2019 soil C are positively correlated. If we want to understand the drivers of carbon *sequestration*, we have good reason to consider the change in soil C pools rather than simply the endpoint in 2019. We might first want to check whether initial soil C determines how much C accumulates.
+Despite a couple influential observations that declined in soil C, it's clear that pre-treatment and 2019 soil C are positively correlated. If we want to understand the drivers of carbon *sequestration*, we have good reason to consider the change in soil C pools rather than simply the endpoint in 2019. We might first want to check whether initial soil C determines how much C accumulates.
 
 ```{r soil_C_legacy2, warning = F, message = F}
 ## again these results are robust to alternate ways of analyzing the data
-## including considering the total pools and adding block random effects
-carbon_seq$perC_change<-carbon_seq$perC_2019-carbon_seq$perC_2013
-summary(lm(perC_change~perC_2013,data=carbon_seq))
-ggplot(data=carbon_seq,aes(x=perC_2013,y=perC_change,color=as.factor(block)))+
+## including considering percentages and adding block random effects
+summary(lm(soilC~soilC_2013,data=carbon_seq))
+ggplot(data=carbon_seq,aes(x=soilC_2013,y=soilC,color=as.factor(block)))+
   geom_point(size=2)+geom_smooth(method="lm",se=F,linewidth=2)
 ```
 
 ```{r soil_C_legacy2_check,fig.height = 8, echo = F}
-check_model(lm(perC_change~perC_2013,data=carbon_seq))
+check_model(lm(soilC~soilC_2013,data=carbon_seq))
 ```
 
 We see the same influential observations as before, but there remains no evidence for a relationship between initial soil C and change in soil C. We can assume that change in soil C is mainly driven by our treatments rather than be legacies of pre-existing soil conditions.
@@ -605,35 +604,7 @@ anova(macro_myco)
 
 First we read in the data from Grossman et al. (2019), available at DOI [https://doi.org/10.6073/pasta/3918fe1d3aab00ab73c4a83372cb82cf](10.6073/pasta/3918fe1d3aab00ab73c4a83372cb82cf) or [https://portal.edirepository.org/nis/mapbrowse?scope=knb-lter-cdr&identifier=683](this link).
 
-```{r readPLFAs}
-PLFA<-read.csv("FAB_AMF_Plots_V3.csv")
 
-```
-
-For convenience, we will attach the PLFA data to the main data frame.
-
-```{r attachPLFAs}
-PLFA_match<-match(carbon_seq$plot,PLFA$Community)
-carbon_seq$X17.0_anteiso.pp<-PLFA$X17.0_anteiso.pp[PLFA_match]
-carbon_seq$X17.0_anteiso.pm<-PLFA$X17.0_anteiso.pm[PLFA_match]
-carbon_seq$X18.0_10me.pp<-PLFA$X18.0_10me.pp[PLFA_match]
-carbon_seq$X18.0_10me.pm<-PLFA$X18.0_10me.pm[PLFA_match] ## this one works
-carbon_seq$X18.1_w9t.pp<-PLFA$X18.1_w9t.pp[PLFA_match]
-carbon_seq$X18.1_w9t.pm<-PLFA$X18.1_w9t.pm[PLFA_match]
-carbon_seq$X18.2_w6.9c.pp<-PLFA$X18.2_w6.9c.pp[PLFA_match]
-carbon_seq$X18.2_w6.9c.pp<-PLFA$X18.2_w6.9c.pm[PLFA_match]
-
-carbon_seq$gen_fungi_pct<-PLFA$gen_fungi_pct[PLFA_match]
-carbon_seq$gram_pos_pct<-PLFA$gram_pos_pct[PLFA_match]
-carbon_seq$gram_neg_pct<-PLFA$gram_neg_pct[PLFA_match]
-carbon_seq$actinos_pct<-PLFA$actinos_pct[PLFA_match]
-
-carbon_seq$Biomass.pm<-PLFA$Biomass.pm[PLFA_match]
-carbon_seq$Biomass.nm<-PLFA$Biomass.nm[PLFA_match]
-
-carbon_seq$fungal.bacterial_mass<-PLFA$fungal.bacterial_mass[PLFA_match]
-carbon_seq$gram_neg.gram_post_mass<-PLFA$gram_neg.gram_post_mass[PLFA_match]
-```
 
 ```{r attachPLFAs_2, include=F}
 
