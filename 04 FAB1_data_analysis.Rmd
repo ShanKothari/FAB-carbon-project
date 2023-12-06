@@ -169,47 +169,13 @@ Although the functional form of the relationship now evidently differs, the coef
 
 ## Changes in soil C in relation to other soil characteristics
 
-A lot of recent work in ecosystem ecology links the accumulation of stable soil C to the formation of macroaggregates (250 $\mu m$ diameter and up). We could first ask: does the percentage of macroaggregates (in 2019) correlate with soil carbon in 2013 (pre-treatment) or 2019?
+We measured three other edaphic properties that we consider here for their relationships with each other and with soil C:
 
-```{r soil_macro_init, warning = F, message = F}
-## note that these relationships would be significant in the absence
-## of the block random intercept
-summary(lmer(soilC_2013~macro250+(1|block),data=carbon_seq))
-summary(lmer(perC_2013~macro250+(1|block),data=carbon_seq))
+*macroaggregates (250 $\mu m$ diameter and up)
+*soil moisture
+*pH
 
-ggplot(data=carbon_seq,aes(x=macro250,y=perC_2013,color=as.factor(block)))+
-  geom_point(size=2)+geom_smooth(method="lm",se=F,linewidth=2)
-```
-
-```{r soil_macro_final, warning = F, message = F}
-## note that these relationships would be significant/marginal in the absence
-## of the block random intercept
-summary(lmer(soilC_2019~macro250+(1|block),data=carbon_seq))
-summary(lmer(perC_2019~macro250+(1|block),data=carbon_seq))
-
-ggplot(data=carbon_seq,aes(x=macro250,y=perC_2019,color=as.factor(block)))+
-  geom_point(size=2)+geom_smooth(method="lm",se=F,linewidth=2)
-```
-
-```{r soil_macro_change, warning = F, message = F}
-## when looking at change in soil C, the block effect reaches a singular fit
-summary(lm(soilC~macro250,data=carbon_seq))
-
-ggplot(data=carbon_seq,aes(x=macro250,y=soilC,color=as.factor(block)))+
-  geom_point(size=2)+geom_smooth(method="lm",se=F,linewidth=2)
-```
-
-These plots offer scant evidence that macroaggregates have much relation to soil C. To the extent that there appears to be a relationship across the full dataset, it appears largely driven by the fact that Block 1 has higher macroaggregates than Block 3 in particular, and greater initial and final percent C than Blocks 2 and 3. (These differences in percent C are largely offset by lower bulk density when calculating the top 20 cm C pool, such that there remain no post-treatment block differences in soil C pools or soil.) This block-level variation might prompt us to look more closely at macroaggregates across blocks:
-
-```{r macro_block, echo = F, warning = F, message = F}
-ggplot(data=carbon_seq,aes(x=as.factor(block),y=macro250))+
-  geom_boxplot()+geom_point()+
-  theme_bw()
-```
-
-Indeed, Block 3 has a much lower macroaggregate fraction than the other two.
-
-Macroaggregates are commonly associated with the ability to retain moisture, so we can test the relationship between macroaggregates and soil moisture.
+First of all, how do these three correlate with each other? Macroaggregates are commonly associated with the ability to retain moisture, so we can test the relationship between macroaggregates and soil moisture.
 
 ```{r moisture_macro, warning = F, message = F}
 summary(lmer(soil_moisture~macro250+(1|block),data=carbon_seq))
@@ -222,31 +188,7 @@ ggplot(data=carbon_seq,aes(x=macro250,y=soil_moisture,color=as.factor(block)))+
 check_model(lmer(soil_moisture~macro250+(1|block),data=carbon_seq))
 ```
 
-There is evidently a close relationship between soil moisture and macroaggregate fraction. What else is related to soil moisture? Although soil C and macroaggregates are not related, it turns out that soil C and soil moisture are, based on pools (or percent C) in both 2013 and 2019:
-
-```{r moisture_soilCpool, warning = F, message = F}
-## this also yields positive relationships using initial and 2019 percent C
-summary(lmer(soil_moisture~soilC_2013+(1|block),data=carbon_seq))
-summary(lmer(soil_moisture~soilC_2019+(1|block),data=carbon_seq))
-
-ggplot(data=carbon_seq,aes(x=soilC_2019,y=soil_moisture,color=as.factor(block)))+
-  geom_point(size=2)+geom_smooth(method="lm",se=F,linewidth=2)
-```
-
-```{r moisture_soilCpool_check,fig.height = 8}
-check_model(lmer(soil_moisture~soilC_2019+(1|block),data=carbon_seq))
-```
-
-However, there is no relationship between soil moisture and soil C accumulation.
-
-```{r moisture_soilC, warning = F, message = F}
-summary(lmer(soil_moisture~soilC+(1|block),data=carbon_seq))
-
-ggplot(data=carbon_seq,aes(x=soilC,y=soil_moisture,color=as.factor(block)))+
-  geom_point(size=2)+geom_smooth(method="lm",se=F,linewidth=2)
-```
-
-We also measured soil pH, which is not correlated with soil moisture but is correlated with macroaggregates.
+There is evidently a close relationship between soil moisture and macroaggregate fraction. How about pH? As it turns out, it isn't correlated with soil moisture but is correlated with macroaggregates.
 
 ```{r moisture_pH, warning = F, message = F}
 ## block random intercept yields singular fit
@@ -268,25 +210,16 @@ ggplot(data=carbon_seq,aes(x=macro250,y=pH,color=as.factor(block)))+
 check_model(lm(pH~macro250,data=carbon_seq))
 ```
 
-As it turns out, soil pH is positively correlated both with soil C accumulation and (more weakly) with the soil C pool in 2019.
+These plots make it rather clear that macroaggregates and soil moisture show considerable block-level variation. Indeed, Block 3 has a much lower macroaggregate fraction than the other two, and Blocks 2 and 3 have lower soil moisture than Block 1.
 
-```{r soilC_pH, warning = F, message = F}
-## block random intercept yields singular fit
-summary(lm(pH~soilC,data=carbon_seq))
-ggplot(data=carbon_seq,aes(x=soilC,y=pH,color=as.factor(block)))+
-  geom_point(size=2)+geom_smooth(method="lm",se=F,linewidth=2)
+```{r macro_block, echo = F, warning = F, message = F}
+ggplot(data=carbon_seq,aes(x=as.factor(block),y=macro250))+
+  geom_boxplot()+geom_point()+
+  theme_bw()
 
-## block random intercept yields singular fit
-summary(lm(pH~soilC_2019,data=carbon_seq))
-ggplot(data=carbon_seq,aes(x=soilC_2019,y=pH,color=as.factor(block)))+
-  geom_point(size=2)+geom_smooth(method="lm",se=F,linewidth=2)
-## this model with the 2019 C pool may be
-## influenced by a high-leverage point (plot 12)
-```
-
-```{r soilC_pH_check,fig.height = 8}
-check_model(lm(pH~soilC,data=carbon_seq))
-check_model(lm(pH~soilC_2019,data=carbon_seq))
+ggplot(data=carbon_seq,aes(x=as.factor(block),y=soil_moisture))+
+  geom_boxplot()+geom_point()+
+  theme_bw()
 ```
 
 Are any of macroaggregates, soil moisture, or pH influenced by tree species richness? Apparently not, as shown below.
@@ -306,6 +239,90 @@ ggplot(data=carbon_seq,aes(x=species_richness,y=soil_moisture,color=as.factor(bl
 summary(lm(pH~species_richness,data=carbon_seq)) ## singular fit with block
 ggplot(data=carbon_seq,aes(x=species_richness,y=pH,color=as.factor(block)))+
   geom_point(size=2)+geom_smooth(method="lm",se=F,linewidth=2)
+```
+
+A lot of recent work in ecosystem ecology links the accumulation of stable soil C to the formation of macroaggregates. We could ask: does the percentage of macroaggregates (in 2019) correlate with soil carbon in 2013 (pre-treatment) or 2019? (Here, we put soil C variables on the left side of the formula because we expect the causality to be that macroaggregate formation increases the stability of soil C. This is important because the random intercept terms are quite important. In analyses of soil moisture and pH, we keep soil C variables on the left side even though the causality is less straightforward; however, it is less consequential due to the lack of random intercept terms.)
+
+```{r soil_macro_init, warning = F, message = F}
+## note that these relationships would be significant in the absence
+## of the block random intercept
+summary(lmer(soilC_2013~macro250+(1|block),data=carbon_seq))
+# summary(lmer(perC_2013~macro250+(1|block),data=carbon_seq))
+
+ggplot(data=carbon_seq,aes(x=macro250,y=soilC_2013,color=as.factor(block)))+
+  geom_point(size=2)+geom_smooth(method="lm",se=F,linewidth=2)
+```
+
+```{r soil_macro_final, warning = F, message = F}
+## note that these relationships would be significant/marginal in the absence
+## of the block random intercept
+summary(lmer(soilC_2019~macro250+(1|block),data=carbon_seq))
+# summary(lmer(perC_2019~macro250+(1|block),data=carbon_seq))
+
+ggplot(data=carbon_seq,aes(x=macro250,y=soilC_2019,color=as.factor(block)))+
+  geom_point(size=2)+geom_smooth(method="lm",se=F,linewidth=2)
+```
+
+```{r soil_macro_change, warning = F, message = F}
+## when looking at change in soil C, the block effect reaches a singular fit
+summary(lm(soilC~macro250,data=carbon_seq))
+
+ggplot(data=carbon_seq,aes(x=macro250,y=soilC,color=as.factor(block)))+
+  geom_point(size=2)+geom_smooth(method="lm",se=F,linewidth=2)
+```
+
+These plots offer scant evidence that macroaggregates have much relation to soil C. To the extent that there appears to be a relationship across the full dataset, it appears largely driven by the fact that Block 1 has higher macroaggregates than Block 3 in particular, and greater initial and final percent C than Blocks 2 and 3. (These differences in percent C are largely offset by lower bulk density when calculating the top 20 cm C pool, such that there remain no post-treatment block differences in soil C pools or soil.)
+
+Although soil C and macroaggregates are not related, it turns out that soil C and soil moisture are, based on pools (or percent C) in both 2013 and 2019:
+
+```{r moisture_soilCpool, warning = F, message = F}
+## this also yields positive relationships using initial and 2019 percent C
+summary(lmer(soilC_2013~soil_moisture+(1|block),data=carbon_seq))
+## singular fit
+summary(lm(soilC_2019~soil_moisture,data=carbon_seq))
+
+ggplot(data=carbon_seq,aes(x=soil_moisture,y=soilC_2019,color=as.factor(block)))+
+  geom_point(size=2)+geom_smooth(method="lm",se=F,linewidth=2)
+```
+
+```{r moisture_soilCpool_check,fig.height = 8}
+check_model(lmer(soil_moisture~soilC_2019+(1|block),data=carbon_seq))
+```
+
+However, there is no relationship between soil moisture and soil C accumulation.
+
+```{r moisture_soilC, warning = F, message = F}
+## singular fit
+summary(lm(soilC~soil_moisture,data=carbon_seq))
+
+ggplot(data=carbon_seq,aes(x=soil_moisture,y=soilC,color=as.factor(block)))+
+  geom_point(size=2)+geom_smooth(method="lm",se=F,linewidth=2)
+```
+
+As it turns out, soil pH is positively correlated both with soil C accumulation and (more weakly) with the soil C pool in 2019 (but not in 2013).
+
+```{r soilC_pH, warning = F, message = F}
+## block random intercept yields singular fit
+summary(lm(soilC~pH,data=carbon_seq))
+ggplot(data=carbon_seq,aes(x=pH,y=soilC,color=as.factor(block)))+
+  geom_point(size=2)+geom_smooth(method="lm",se=F,linewidth=2)
+
+## block random intercept yields singular fit
+summary(lm(soilC_2013~pH,data=carbon_seq))
+ggplot(data=carbon_seq,aes(x=pH,y=soilC_2013,color=as.factor(block)))+
+  geom_point(size=2)+geom_smooth(method="lm",se=F,linewidth=2)
+
+## block random intercept yields singular fit
+summary(lm(soilC_2019~pH,data=carbon_seq))
+ggplot(data=carbon_seq,aes(x=pH,y=soilC_2019,color=as.factor(block)))+
+  geom_point(size=2)+geom_smooth(method="lm",se=F,linewidth=2)
+## this model with the 2019 C pool may be
+## influenced by a high-leverage point (plot 12)
+```
+
+```{r soilC_pH_check,fig.height = 8}
+check_model(lm(soilC~pH,data=carbon_seq))
+check_model(lm(soilC_2019~pH,data=carbon_seq))
 ```
 
 Lastly we might wonder whether macroaggregates (or soil moisture, or pH) are correlated with fine root C. Once again, the answer is no: we show this for macroaggregates below.
