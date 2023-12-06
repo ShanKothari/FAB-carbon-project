@@ -179,6 +179,10 @@ First of all, how do these three correlate with each other? Macroaggregates are 
 
 ```{r moisture_macro, warning = F, message = F}
 summary(lmer(soil_moisture~macro250+(1|block),data=carbon_seq))
+## for F-statistics of mixed-effects models, one can run:
+# anova(lmer(soil_moisture~macro250+(1|block),data=carbon_seq))
+## and for Nakagawa & Schielzeth Rc2 and Rm2, one can run:
+# r.squaredGLMM(lmer(soil_moisture~macro250+(1|block),data=carbon_seq))
 
 ggplot(data=carbon_seq,aes(x=macro250,y=soil_moisture,color=as.factor(block)))+
   geom_point(size=2)+geom_smooth(method="lm",se=F,linewidth=2)
@@ -325,12 +329,24 @@ check_model(lm(soilC~pH,data=carbon_seq))
 check_model(lm(soilC_2019~pH,data=carbon_seq))
 ```
 
-Lastly we might wonder whether macroaggregates (or soil moisture, or pH) are correlated with fine root C. Once again, the answer is no: we show this for macroaggregates below.
+We might wonder whether macroaggregates (or soil moisture, or pH) are correlated with fine root C. Once again, the answer is no: we show this for macroaggregates below.
 
 ```{r macro_root, warning = F, message = F}
 summary(lmer(macro250~rootC+(1|block),data=carbon_seq))
 ggplot(data=carbon_seq,aes(x=rootC,y=macro250,color=as.factor(block)))+
   geom_point(size=2)+geom_smooth(method="lm",se=F,linewidth=2)
+```
+
+Lastly, we present a result that we show in the Discussion: plots with higher aboveground biomass have lower soil moisture (and also fewer macroaggregates, although this is wrapped up into the structural equation model below).
+
+```{r woody_soil_moisture}
+summary(lmer(soil_moisture~woodyC+(1|block),data=carbon_seq))
+ggplot(data=carbon_seq,aes(x=woodyC,y=soil_moisture,color=as.factor(block)))+
+  geom_point(size=2)+geom_smooth(method="lm",se=F,linewidth=2)
+```
+
+```{r woody_sm_check}
+check_model(lmer(soil_moisture~woodyC+(1|block),data=carbon_seq))
 ```
 
 ## Tree biodiversity effects on above- and belowground C accumulation
