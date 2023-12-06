@@ -77,7 +77,7 @@ C_sp_plot<-aggregate(C_estimate~species_code+plot+block,
 
 ## generate indicators of species composition
 FABplot_list<-split(FABdata_mod,f = FABdata_mod$plot)
-FABplot_comp<-unlist(lapply(FABplot_list,function(plot) paste(unique(plot$species_code),collapse="|")))
+FABplot_comp<-unlist(lapply(FABplot_list,function(plot) paste(sort(unique(plot$species_code)),collapse="|")))
 C_sp_plot$species_composition<-FABplot_comp[match(C_sp_plot$plot,names(FABplot_comp))]
 
 ## estimate fractions of each species in each plot
@@ -282,7 +282,8 @@ C_agg$totalOY<-C_agg$woodyOY+C_agg$soilOY+C_agg$rootOY
 
 ## macroaggregates, soil moisture, and pH
 C_agg$macro250<-belowground$X..Mass.of.250[belowground_match]
-C_agg$macro53<-belowground$X..Mass.of.53[belowground_match]
+C_agg$micro53<-belowground$X..Mass.of.53[belowground_match]
+C_agg$micro0<-belowground$X..Less.than.53[belowground_match]
 C_agg$soil_moisture<-belowground$Soil.moisture[belowground_match]
 C_agg$pH<-belowground$pH[belowground_match]
 
@@ -307,5 +308,15 @@ C_agg$leaf_type<-ifelse(C_agg$percentCon==0,"D",
 
 ## entirely Pinus (P), Quercus (Q), or neither (N)?
 C_agg$major_genus<-FAB_planted$major_genus[match(C_agg$plot,FAB_planted$plot)]
+
+## PLFAs used in this manuscript
+PLFA<-read.csv("OriginalData/FAB_AMF_Plots_V3.csv")
+PLFA_match<-match(C_agg$plot,PLFA$Community)
+C_agg$X15.0_iso.pm<-PLFA$X15.0_iso.pm[PLFA_match]
+C_agg$X17.0_anteiso.pm<-PLFA$X17.0_anteiso.pm[PLFA_match]
+C_agg$X18.0_10me.pm<-PLFA$X18.0_10me.pm[PLFA_match]
+C_agg$X18.2_w6.9c.pp<-PLFA$X18.2_w6.9c.pp[PLFA_match]
+C_agg$Biomass.pm<-PLFA$Biomass.pm[PLFA_match]
+C_agg$gen_fungi_pct<-PLFA$gen_fungi_pct[PLFA_match]
 
 write.csv(C_agg,"ProcessedData/carbon_sequestration.csv",row.names = F)
