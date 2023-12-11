@@ -275,9 +275,21 @@ ggplot(data=carbon_seq,aes(x=macro250,y=soilC,color=as.factor(block)))+
   geom_point(size=2)+geom_smooth(method="lm",se=F,linewidth=2)
 ```
 
-These plots offer scant evidence that macroaggregates have much relation to soil C. To the extent that there appears to be a relationship across the full dataset, it appears largely driven by the fact that Block 1 has higher macroaggregates than Block 3 in particular, and greater initial and final percent C than Blocks 2 and 3. (These differences in percent C are largely offset by lower bulk density when calculating the top 20 cm C pool, such that there remain no post-treatment block differences in soil C pools or soil.)
+These plots offer scant evidence that macroaggregates have much relation to soil C, accounting for the non-independence of plots from the same block. From a more basic soil science perspective, we might wish to see whether there is a correlation between soil percent C and macroaggregates across the full dataset (without the block random effect). There is, although this relationship is perhaps surprisingly weak, and (even more surprisingly) is stronger when examining percent C in 2013 than 2019:
 
-Although soil C and macroaggregates are not related, it turns out that soil C and soil moisture are, based on pools (or percent C) in both 2013 and 2019:
+```{r perC_macro}
+summary(lm(perC_2013~macro250,data=carbon_seq))
+ggplot(data=carbon_seq,aes(x=macro250,y=perC_2013,color=as.factor(block)))+
+  geom_point(size=2)+geom_smooth(method="lm",se=F,linewidth=2)
+
+summary(lm(perC_2019~macro250,data=carbon_seq))
+ggplot(data=carbon_seq,aes(x=macro250,y=perC_2019,color=as.factor(block)))+
+  geom_point(size=2)+geom_smooth(method="lm",se=F,linewidth=2)
+```
+
+To the extent that there appears to be a relationship across the full dataset, it appears largely driven by the fact that Block 1 has higher macroaggregates than Block 3 in particular, and greater initial and final percent C than Blocks 2 and 3. (These differences in percent C are largely offset by lower bulk density when calculating the top 20 cm C pool, such that there remain no post-treatment block differences in soil C pools or soil C accumulation.) 
+
+Although soil C pools and macroaggregates are not strongly related, it turns out that soil C and soil moisture are, based on pools (or percent C) in both 2013 and 2019:
 
 ```{r moisture_soilCpool, warning = F, message = F}
 ## this also yields positive relationships using initial and 2019 percent C
@@ -393,6 +405,7 @@ We can examine our AIC table, select our 'best' model, and do some basic checks 
 
 ```{r woody_total2, fig.height=8}
 mwt_dredge ## we'll select the second model
+mwt_block_dredge ## parameters are very similar with block
 mwt_model<-get.models(mwt_dredge, subset = 2)[[1]]
 check_model(mwt_model)
 ```
@@ -405,7 +418,7 @@ plot(jitter(PSV,factor=50)~jitter(FDis,factor=50),data=carbon_seq)
 
 Therefore, their "effects" partly offset each other. However, their variance inflation factor (VIF) is not so high that it would ordinarily raise concerns about multicollinearity.
 
-Perhaps more troubling are the other checks: the posterior predictive check plot, the homoskedasticity plot, and the Q-Q (normality of residuals) plot. It is common for data from BEF experiments not to strictly meet these assumptions of ordinary least-squares regression because the variance is often greatest among monocultures. To assure ourselves that our results are robust, we can use robust regression through iterated re-weighted least squares to reduce the influence of high-leverage points.
+Perhaps more troubling are the other checks: the posterior predictive check plot, the homoskedasticity plot, and the Q-Q (normality of residuals) plot. It is common for data from BEF experiments not to strictly meet these assumptions of ordinary least-squares regression because the variance is often greatest among monocultures. To assure ourselves that our results are robust, we can use robust regression through iterated re-weighted least squares to reduce the influence of outliers.
 
 ```{r woody_total3, message=F}
 mwt_robust<-rlm(woodyC~species_richness+FDis+PSV,data=carbon_seq)
@@ -426,6 +439,9 @@ Let's repeat the same procedure for overyielding in aboveground carbon.
 ```{r woody_OY, message=F, fig.height=8}
 ## for the dredge function to work, we need to remove plots with NAs
 carbon_seq_woodyOY<-carbon_seq[which(!is.na(carbon_seq$woodyOY)),]
+
+## we'll leave out models with block random intercept
+## because they all result in a singular fit
 mw<-lm(woodyOY~species_richness+FDis+PSV,
        data=carbon_seq_woodyOY)
 ## as before, the posterior predictive check and Q-Q plot
@@ -444,9 +460,11 @@ mw_model<-get.models(mw_dredge, subset = 1)[[1]]
 check_model(mw_model)
 ```
 
-Robust regression tends to shrink parameter estimates slightly here, but yields a qualitatively very similar model.
+Robust regression slightly shrinks parameter estimates here, but yields a qualitatively very similar model.
 
-Overyielding is often partitioned via Loreau & Hector (2001)'s method into complementarity and selection effects. Complementarity effects (CE) are based on the mean of species' *relative* yields and are often taken to indicate synergistic interactions like niche partitioning or facilitation. Selection (SE) effects describe how more productive species tend to show greater (or lesser) relative boosts in productivity than average in mixtures. Although CE and SE must sum to overyielding, it is possible for one to be greater than overyielding (or even total plot biomass) if the other is negative. (It is also possible for total overyielding to be negative, in which case it may be called underyielding.) Although CE and SE are expressed in the same units as overyielding (here, kg biomass per ha), it can be hard to make sense of extreme CE or SE values in these terms. For these reasons, we choose to focus on whether they are generally positive or negative than on their actual magnitudes. Starting with the Loreau & Hector (2001) paper itself, it is common for BEF researchers to expect positive CE and non-positive SE on average across plots. This would imply that (1) species tend to overperform in mixture and (2) it is not only the most productive species that overperform in mixture. It may help to look at the data quickly before proceeding.
+Overyielding is often partitioned via Loreau & Hector (2001)'s method into complementarity and selection effects. Complementarity effects (CE) are based on the mean of species' *relative* yields and are often taken to indicate synergistic interactions like niche partitioning or facilitation. Selection (SE) effects describe how more productive species tend to show greater (or lesser) relative boosts in productivity than average in mixtures.
+
+Although CE and SE must sum to overyielding, it is possible for one to be greater than overyielding (or even total plot biomass) if the other is negative. (It is also possible for total overyielding to be negative, in which case it may be called underyielding.) Although CE and SE are expressed in the same units as overyielding (here, kg biomass per ha), it can be hard to make sense of extreme CE or SE values in these terms. For these reasons, we choose to focus on whether they are generally positive or negative than on their actual magnitudes. Starting with the Loreau & Hector (2001) paper itself, it is common for BEF researchers to expect positive CE and non-positive SE on average across plots. This would imply that (1) species tend to overperform in mixture and (2) it is not only the most productive species that overperform in mixture. It may help to look at the data quickly before proceeding.
 
 ```{r CESE}
 plot(woodyCE~species_richness,data=carbon_seq_woodyOY)
@@ -635,12 +653,81 @@ anova(macro_myco)
 
 ## Microbial composition and soil C accumulation
 
-First we read in the data from Grossman et al. (2019), available at DOI [https://doi.org/10.6073/pasta/3918fe1d3aab00ab73c4a83372cb82cf](10.6073/pasta/3918fe1d3aab00ab73c4a83372cb82cf) or [https://portal.edirepository.org/nis/mapbrowse?scope=knb-lter-cdr&identifier=683](this link).
+We conducted an exploratory analysis of the relationships between various PLFAs (measured in 2016) and either the change in soil C pools or the final pool in 2019. The idea here is that microbial activity could be a driver of how much of the C inputs are actually retained in the soil. However, we don't have the data needed to support a clean causal story here, so these correlations are best interpreted as just that: correlations.
 
+Although many PLFAs were measured (and Grossman et al. 2019 has further details), we selected certain PLFAs for examination in the analyses below.
 
+```{r 15:0_iso}
+summary(lmer(soilC~X15.0_iso.pp+(1|block),data=carbon_seq))
+summary(lmer(soilC_2019~X15.0_iso.pm+(1|block),data=carbon_seq))
 
-```{r attachPLFAs_2, include=F}
+ggplot(data=carbon_seq,aes(x=X15.0_iso.pm,y=soilC_2019,color=as.factor(block)))+
+  geom_point(size=2)+geom_smooth(method="lm",se=F,linewidth=2)
+```
 
+```{r 15:0_iso_check, fig.height=8}
+check_model(lmer(soilC_2019~X15.0_iso.pm+(1|block),data=carbon_seq))
+```
+
+```{r 17:0_anteiso}
+summary(lmer(soilC~X17.0_anteiso.pp+(1|block),data=carbon_seq))
+summary(lmer(soilC_2019~X17.0_anteiso.pm+(1|block),data=carbon_seq))
+
+ggplot(data=carbon_seq,aes(x=X17.0_anteiso.pm,y=soilC_2019,color=as.factor(block)))+
+  geom_point(size=2)+geom_smooth(method="lm",se=F,linewidth=2)
+```
+
+```{r 17:0_anteiso_check, fig.height=8}
+check_model(lmer(soilC_2019~X17.0_anteiso.pm+(1|block),data=carbon_seq))
+```
+
+```{r 18.0_10me.pm}
+## block yields singular fit here
+summary(lm(soilC~X18.0_10me.pp,data=carbon_seq))
+summary(lm(soilC_2019~X18.0_10me.pm,data=carbon_seq))
+
+ggplot(data=carbon_seq,aes(x=X18.0_10me.pm,y=soilC_2019,color=as.factor(block)))+
+  geom_point(size=2)+geom_smooth(method="lm",se=F,linewidth=2)
+```
+
+```{r X18.0_10me.pm_check, fig.height=8}
+check_model(lm(soilC_2019~X18.0_10me.pm,data=carbon_seq))
+```
+
+```{r 18.2_w6.9c.pm}
+## singular fit for the first of these
+summary(lm(soilC~X18.2_w6.9c.pp,data=carbon_seq))
+summary(lmer(soilC_2019~X18.2_w6.9c.pm+(1|block),data=carbon_seq))
+
+ggplot(data=carbon_seq,aes(x=X18.2_w6.9c.pp,y=soilC,color=as.factor(block)))+
+  geom_point(size=2)+geom_smooth(method="lm",se=F,linewidth=2)
+```
+
+```{r X18.2_w6.9c.pp_check, fig.height=8}
+check_model(lm(soilC~X18.2_w6.9c.pp,data=carbon_seq))
+```
+
+Besides these taxon-specific PLFAs, we were interested in showing whether total PLFA concentration correlated with soil C or macroaggregates. It does not:
+
+```{r Biomass.pm}
+## singular fit for the first of these
+summary(lmer(soilC~Biomass.pm+(1|block),data=carbon_seq))
+summary(lmer(soilC_2019~Biomass.pm+(1|block),data=carbon_seq))
+summary(lmer(macro250~Biomass.pm+(1|block),data=carbon_seq))
+```
+
+However, the percent of fungal PLFAs has a marginally significant correlation with soil C accumulation.
+
+```{r fungal_pct}
+## singular fit for the first of these
+summary(lmer(soilC~gen_fungi_pct+(1|block),data=carbon_seq))
+
+ggplot(data=carbon_seq,aes(x=gen_fungi_pct,y=soilC,color=as.factor(block)))+
+  geom_point(size=2)+geom_smooth(method="lm",se=F,linewidth=2)
+```
+
+```{r fungal_pct_check, fig.height=8}
+check_model(lmer(soilC~gen_fungi_pct+(1|block),data=carbon_seq))
 ```
 
 ## Structural equation modeling of aboveground and soil C
