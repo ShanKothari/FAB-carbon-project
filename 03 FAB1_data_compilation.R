@@ -313,8 +313,12 @@ C_agg$major_genus<-FAB_planted$major_genus[match(C_agg$plot,FAB_planted$plot)]
 PLFA<-read.csv("OriginalData/FAB_AMF_Plots_V3.csv")
 PLFA_match<-match(C_agg$plot,PLFA$Community)
 C_agg$X15.0_iso.pm<-PLFA$X15.0_iso.pm[PLFA_match]
+C_agg$X15.0_iso.pp<-PLFA$X15.0_iso.pp[PLFA_match]
 C_agg$X17.0_anteiso.pm<-PLFA$X17.0_anteiso.pm[PLFA_match]
+C_agg$X17.0_anteiso.pp<-PLFA$X17.0_anteiso.pp[PLFA_match]
 C_agg$X18.0_10me.pm<-PLFA$X18.0_10me.pm[PLFA_match]
+C_agg$X18.0_10me.pp<-PLFA$X18.0_10me.pp[PLFA_match]
+C_agg$X18.2_w6.9c.pm<-PLFA$X18.2_w6.9c.pm[PLFA_match]
 C_agg$X18.2_w6.9c.pp<-PLFA$X18.2_w6.9c.pp[PLFA_match]
 C_agg$Biomass.pm<-PLFA$Biomass.pm[PLFA_match]
 C_agg$gen_fungi_pct<-PLFA$gen_fungi_pct[PLFA_match]
