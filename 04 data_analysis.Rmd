@@ -1,16 +1,14 @@
 ---
-title: "Appendix S2: Statistical analyses"
-author: 
-- Reb Bryant
-- Shan Kothari
-- Jeannine Cavender-Bares
-- Stephanie J. Curran
-- Jake J. Grossman
-- Sarah E. Hobbie
-- Charlotte Nash
-- Grace C. Neumiller
-- Craig R. See
-output: pdf_document
+title: "Independent effects of tree diversity on aboveground woody and soil carbon pools after six years of experimental afforestation"
+subtitle: "Appendix S2: Statistical analyses"
+author:
+  - Reb Bryant, Shan Kothari, Jeannine Cavender-Bares, Stephanie J. Curran,
+  - Jake J. Grossman, Sarah E. Hobbie, Charlotte Nash, Grace C. Neumiller, Craig R. See
+  - "**Journal:** *Ecological Applications*"
+output:
+  pdf_document:
+    toc: true
+
 ---
 
 ```{r setup, include=FALSE}
@@ -20,7 +18,7 @@ knitr::opts_knit$set(root.dir = "C:/Users/querc/Dropbox/FABCarbonProject/Process
 
 ## Setting up the workspace
 
-This document is meant to provide a narrative summary to the statistical analyses accompanying the manuscript "Independent effects of tree diversity on aboveground and soil carbon pools after six years of experimental afforestation" by Bryant et al. (in review, as of `r Sys.Date()`). We show the R output from the models in the manuscript and test the validity of various statistical assumptions underlying our model choices. In cases when these assumptions are violated, we perform robustness checks to show at the very least that the qualitative structure of the models is supported, and to assess the plausible variation in parameter estimates.
+This document is meant to provide a narrative summary to the statistical analyses accompanying the manuscript "Independent effects of tree diversity on aboveground woody and soil carbon pools after six years of experimental afforestation" by Bryant et al. (in review, as of `r Sys.Date()`). We show the R output from the models in the manuscript and test the validity of various statistical assumptions underlying our model choices. In cases when these assumptions are violated, we perform robustness checks to show at the very least that the qualitative structure of the models is supported, and to assess the plausible variation in parameter estimates.
 
 Because this document is only meant for the technical purpose of supporting the adequacy of our statistical analyses, we do not in general make much attempt to present output in a polished form. For example, units are generally omitted from axis labels; readers are advised to look to the main text or the metadata accompanying the data repository for them. We note briefly that, as is standard in R Markdown, all figures correspond to the blocks of code that *precede* them, even if those blocks are on the previous page.
 
@@ -29,15 +27,15 @@ Our first step is to load a number of packages. Although this paper was a collab
 <!-- in the manuscript we wrote 4.1.1 -->
 
 ```{r packages, echo = T, warning=F, message=F}
-library(lme4) ## 1.1.32
+library(lme4) ## 1.1.35.1
 library(lmerTest) ## 3.1.3
 library(MuMIn) ## 1.47.5
 library(car) ## 3.1.2
-library(performance) ## 0.10.5
+library(performance) ## 0.10.9
 library(piecewiseSEM) ## 2.3.0
-library(MASS) ## 7.3.57
-library(ggplot2) ## 3.4.2
-library(emmeans) ## 1.8.5
+library(MASS) ## 7.3.60.0.1
+library(ggplot2) ## 3.4.4
+library(emmeans) ## 1.10.0
 ```
 
 Next, we go to the working directory where we saved the archived data file and read it in.
@@ -51,7 +49,7 @@ Next, we go to the working directory where we saved the archived data file and r
 carbon_seq<-read.csv("carbon_sequestration.csv")
 ```
 
-## Relationships among aboveground, soil, and fine root carbon
+## Relationships among aboveground woody, soil, and fine root carbon
 
 There are three blocks in the FAB1 experiment. Adding a random intercept for block in our models tends to either yield a singular fit or negligible changes in model parameters--the exceptions being in analyses of macroaggregates or soil moisture. (For most other variables, there really does seem to be little evidence that blocks systematically vary; however, three is also a very small number of levels for estimating a random effect variance.) We generally do not show the output of models with the block random effect if it results in a singular fit or in very small changes in parameter values.
 
@@ -92,11 +90,11 @@ check_model(lm(soilC~soilC_2013,data=carbon_seq))
 
 We see the same influential observations as before, but there remains no evidence for a relationship between initial soil C and change in soil C. We can assume that change in soil C is mainly driven by our treatments rather than be legacies of pre-existing soil conditions.
 
-One of the key questions of the manuscript is: does change in soil C correlate with aboveground (woody) C?
+One of the key questions of the manuscript is: does change in soil C correlate with aboveground woody C?
 
 ```{r soil_wood, warning = F, message = F}
-## here we'll switch to using pools so that aboveground and soil are
-## in the same units
+## here we'll switch to using pools so that aboveground woody and soil
+## are in the same units
 
 ## note that a block random intercept results in a singular fit
 summary(lm(soilC~woodyC,data=carbon_seq))
@@ -108,7 +106,7 @@ ggplot(data=carbon_seq,aes(x=woodyC,y=soilC,color=as.factor(block)))+
 check_model(lm(soilC~woodyC,data=carbon_seq))
 ```
 
-It is clear that there is no relationship between the two variables. However, as we report in the paper, if we subset the data to monoculture plots only, we see a significant interaction between species ID and aboveground C on soil C.
+It is clear that there is no relationship between the two variables. However, as we report in the paper, if we subset the data to monoculture plots only, we see a significant interaction between species ID and aboveground woody C on soil C.
 
 ```{r soil_wood_mono, warning = F, message = F}
 summary(aov(soilC~woodyC*monoculture_species,data=carbon_seq))
@@ -139,7 +137,7 @@ ggplot(data=carbon_seq,aes(x=rootC,y=soilC,color=as.factor(block)))+
 check_model(lm(soilC~rootC,data=carbon_seq))
 ```
 
-There is fairly weak evidence for a positive relationship between fine root C and soil C accumulation. Next, we check the relationship with aboveground C.
+There is fairly weak evidence for a positive relationship between fine root C and soil C accumulation. Next, we check the relationship with aboveground woody C.
 
 ```{r root_woody, warning = F, message = F}
 ## note that a block random intercept results in a singular fit
@@ -192,7 +190,9 @@ ggplot(data=carbon_seq,aes(x=macro250,y=soil_moisture,color=as.factor(block)))+
 check_model(lmer(soil_moisture~macro250+(1|block),data=carbon_seq))
 ```
 
-There is evidently a close relationship between soil moisture and macroaggregate fraction. How about pH? As it turns out, it isn't correlated with soil moisture but is correlated with macroaggregates.
+There is evidently a close relationship between soil moisture and macroaggregate fraction. Indeed, since the blocks vary in macroaggregate content, this model may shrink the parameter estimate.
+
+How about pH? As it turns out, it isn't correlated with soil moisture but is correlated with macroaggregates.
 
 ```{r moisture_pH, warning = F, message = F}
 ## block random intercept yields singular fit
@@ -349,7 +349,7 @@ ggplot(data=carbon_seq,aes(x=rootC,y=macro250,color=as.factor(block)))+
   geom_point(size=2)+geom_smooth(method="lm",se=F,linewidth=2)
 ```
 
-Lastly, we present a result that we show in the Discussion: plots with higher aboveground biomass have lower soil moisture (and also fewer macroaggregates, although this is wrapped up into the structural equation model below).
+Lastly, we present a result that we show in the Discussion: plots with higher aboveground woody C have lower soil moisture (and also fewer macroaggregates, although this is wrapped up into the structural equation model below).
 
 ```{r woody_soil_moisture}
 summary(lmer(soil_moisture~woodyC+(1|block),data=carbon_seq))
@@ -357,11 +357,11 @@ ggplot(data=carbon_seq,aes(x=woodyC,y=soil_moisture,color=as.factor(block)))+
   geom_point(size=2)+geom_smooth(method="lm",se=F,linewidth=2)
 ```
 
-```{r woody_sm_check}
+```{r woody_sm_check,fig.height = 8}
 check_model(lmer(soil_moisture~woodyC+(1|block),data=carbon_seq))
 ```
 
-## Tree biodiversity effects on above- and belowground C accumulation
+## Tree biodiversity effects on aboveground woody and belowground C accumulation
 
 One of the core goals of our paper is to show how carbon storage in our experimental plots was influenced by the diversity of planted trees in the first six years of the experiment. We estimated carbon storage across three pools:
 
@@ -369,7 +369,7 @@ One of the core goals of our paper is to show how carbon storage in our experime
 * soil (0-20 cm)--expressed as change from pre-treatment soil carbon
 * fine roots (0-20 cm)
 
-Besides these pools, we also calculated overyielding for mixture plots as the difference between the observed pools and monoculture-based expectations. For aboveground wood, we further partitioned overyielding into complementarity and selection effects following Loreau & Hector (2001).
+Besides these pools, we also calculated the net biodiversity effect (NBE) for mixture plots as the difference between the observed pools and monoculture-based expectations. (The NBE is synonymous with overyielding, and we use the abbreviation OY in variable names because that was what we chose in early stages of the project.) For aboveground wood, we further partitioned the NBE into complementarity and selection effects following Loreau & Hector (2001).
 
 We considered three facets of diversity:
 
@@ -377,11 +377,13 @@ We considered three facets of diversity:
 * Laliberté and Legendre (2010)'s functional dispersion (FDis), as reported by Grossman et al. (2017)
 * Helmus et al. (2007)'s phylogenetic species variability (PSV), as reported by Grossman et al. (2017)
 
-The latter two are metrics of functional and phylogenetic diversity that are designed not to be dependent on species richness. However, FDis and PSV are both 0 for monocultures--by default for FDis and as an analysis choice for PSV. As a result, they do end up somewhat correlated with each other and with species richness. As we will see, multicollinearity does not end up being a severe problem in most cases.
+The traits that went into the calculation of FDis include: leaf mass per area, leaf nitrogen concentration, leaf habit (categorical), wood density, mycorrhizal type (categorical), leaf calcium concentration, and indices of shade, drought, and waterlogging tolerance from Niinemets & Valladares (2006). Full details are found in the paper by Grossman et al. (2017).
+
+The functional and phylogenetic diversity metrics chosen are designed not to be dependent on species richness. However, FDis and PSV are both 0 for monocultures--by default for FDis and as an analysis choice for PSV. As a result, they do end up somewhat correlated with each other and with species richness. As we will see, multicollinearity does not end up being a severe problem in most cases.
 
 In keeping with the dominant paradigm in biodiversity-ecosystem function (BEF) research, we proposed that planted tree diversity would positively influence all three carbon pools. However, we did not pose hypotheses about which specific facets of tree diversity would matter most. As a result, we used an AICc-based framework to test all models nested within a model that includes species richness, FDis, and PSV. We select the most parsimonious model with a $\Delta AICc<2$ from the model with the lowest AICc. (In effect, this is much like standard null hypothesis significance testing, where $AICc<2$ corresponds to $p>0.05$.) When there are two or more equally parsimonious such models, we selected the one with the lower AICc.
 
-### Aboveground carbon
+### Aboveground woody carbon
 
 We can start with aboveground woody carbon:
 
@@ -432,9 +434,9 @@ mwt_robust_dredge
 
 Here, the 'best' model selected involves the same variables with similar (but not exactly the same) parameter values to when we were using OLS.
 
-### Overyielding in aboveground carbon
+### Net biodiversity effect in aboveground woody carbon
 
-Let's repeat the same procedure for overyielding in aboveground carbon.
+Let's repeat the same procedure for the NBE in aboveground woody carbon.
 
 ```{r woody_OY, message=F, fig.height=8}
 ## for the dredge function to work, we need to remove plots with NAs
@@ -462,9 +464,9 @@ check_model(mw_model)
 
 Robust regression slightly shrinks parameter estimates here, but yields a qualitatively very similar model.
 
-Overyielding is often partitioned via Loreau & Hector (2001)'s method into complementarity and selection effects. Complementarity effects (CE) are based on the mean of species' *relative* yields and are often taken to indicate synergistic interactions like niche partitioning or facilitation. Selection (SE) effects describe how more productive species tend to show greater (or lesser) relative boosts in productivity than average in mixtures.
+The NBE is often partitioned via Loreau & Hector (2001)'s method into complementarity and selection effects. Complementarity effects (CE) are based on the mean of species' *relative* yields and are often taken to indicate synergistic interactions like niche partitioning or facilitation. Selection (SE) effects describe how more productive species tend to show greater (or lesser) relative boosts in productivity than average in mixtures.
 
-Although CE and SE must sum to overyielding, it is possible for one to be greater than overyielding (or even total plot biomass) if the other is negative. (It is also possible for total overyielding to be negative, in which case it may be called underyielding.) Although CE and SE are expressed in the same units as overyielding (here, kg biomass per ha), it can be hard to make sense of extreme CE or SE values in these terms. For these reasons, we choose to focus on whether they are generally positive or negative than on their actual magnitudes. Starting with the Loreau & Hector (2001) paper itself, it is common for BEF researchers to expect positive CE and non-positive SE on average across plots. This would imply that (1) species tend to overperform in mixture and (2) it is not only the most productive species that overperform in mixture. It may help to look at the data quickly before proceeding.
+Although CE and SE must sum to NBE, it is possible for one to be greater than the NBE (or even total plot biomass) if the other is negative. (It is also possible for total overyielding to be negative, in which case it may be called underyielding.) Although CE and SE are expressed in the same units as NBE (here, kg biomass per ha), it can be hard to make sense of extreme CE or SE values in these terms. For these reasons, we choose to focus on whether they are generally positive or negative than on their actual magnitudes. Starting with the Loreau & Hector (2001) paper itself, it is common for BEF researchers to expect positive CE and non-positive SE on average across plots. This would imply that (1) species tend to overperform in mixture and (2) it is not only the most productive species that overperform in mixture. It may help to look at the data quickly before proceeding.
 
 ```{r CESE}
 plot(woodyCE~species_richness,data=carbon_seq_woodyOY)
@@ -484,7 +486,7 @@ There is some evidence that CE differs from 0, but not much evidence that SE doe
 
 <!-- we should change the results section and discussion to match this -->
 
-### Soil C accumulation and overyielding
+### Soil C accumulation and net biodiversity effects
 
 We can now do the same for soil C accumulation:
 
@@ -501,7 +503,7 @@ mst_model<-get.models(mst_dredge, subset = 1)[[1]]
 check_model(mst_model)
 ```
 
-And for overyielding in soil C accumulation:
+And for NBE in soil C accumulation:
 
 ```{r OY_soilC, message=F}
 carbon_seq_soilOY<-carbon_seq[which(!is.na(carbon_seq$soilOY)),]
@@ -518,7 +520,7 @@ check_model(ms_model)
 
 Both of these models seem to meet the assumptions quite well.
 
-### Fine roots and overyielding
+### Fine roots and net biodiversity effects
 
 ```{r rootC, message=F}
 ## total root C
@@ -534,7 +536,7 @@ mrt_model<-get.models(mrt_dredge, subset = 1)[[1]]
 check_model(mrt_model)
 ```
 
-The selected model (with no predictors) does a poor job of meeting assumptions, but even changing out `rootC` for `log(rootC)`, which meets the assumptions better, yields a 'best' model with no predictor variables. The same is true of robust regression. We move on to overyielding.
+The selected model (with no predictors) does a poor job of meeting assumptions, but even changing out `rootC` for `log(rootC)`, which meets the assumptions better, yields a 'best' model with no predictor variables. The same is true of robust regression. We move on to the NBE.
 
 
 ```{r rootC_OY, message=F, fig.height=8}
@@ -653,7 +655,7 @@ anova(macro_myco)
 
 ## Microbial composition and soil C accumulation
 
-We conducted an exploratory analysis of the relationships between various PLFAs (measured in 2016) and either the change in soil C pools or the final pool in 2019. The idea here is that microbial activity could be a driver of how much of the C inputs are actually retained in the soil. However, we don't have the data needed to support a clean causal story here, so these correlations are best interpreted as just that: correlations.
+We conducted an exploratory analysis of the relationships between various PLFAs (measured in 2016) and either the change in soil C pools or the final pool in 2019. The idea here is that microbial activity could be a driver of how much of the C inputs are actually retained in the soil. However, we don't have the temporal sampling needed to support a clean causal story here, so these correlations are best interpreted as just that: correlations. On a statistical level, it may be worth noting the large deviations from the normality of residuals assumption in some of these models, especially those with a random effect.
 
 Although many PLFAs were measured (and Grossman et al. 2019 has further details), we selected certain PLFAs for examination in the analyses below.
 
@@ -695,7 +697,7 @@ check_model(lm(soilC_2019~X18.0_10me.pm,data=carbon_seq))
 ```
 
 ```{r 18.2_w6.9c.pm}
-## singular fit for the first of these
+## block yields singular fit for the first of these
 summary(lm(soilC~X18.2_w6.9c.pp,data=carbon_seq))
 summary(lmer(soilC_2019~X18.2_w6.9c.pm+(1|block),data=carbon_seq))
 
@@ -730,16 +732,16 @@ ggplot(data=carbon_seq,aes(x=gen_fungi_pct,y=soilC,color=as.factor(block)))+
 check_model(lmer(soilC~gen_fungi_pct+(1|block),data=carbon_seq))
 ```
 
-## Structural equation modeling of aboveground and soil C
+## Structural equation modeling of aboveground woody and soil C
 
-We use structural equation modeling (SEM) to tie together our hypotheses in a more integrative manner. Although we found no evidence elsewhere for a correlation between aboveground and soil C accumulation, SEMs allow us to directly test whether the influence of species richness on soil C accumulation is mediated by aboveground C.
+We use structural equation modeling (SEM) to tie together our hypotheses in a more integrative manner. Although we found no evidence elsewhere for a correlation between aboveground woody and soil C accumulation, SEMs allow us to directly test whether the influence of species richness on soil C accumulation is mediated by aboveground woody C.
 
 We select six variables:
 
 * species richness (exogenous)
 * percent of planted trees associated with AM fungi (exogenous)
 * percent of planted trees that are conifers (exogenous)
-* aboveground C (endogenous)
+* aboveground woody C (endogenous)
 * macroaggregates (endogenous)
 * soil C accumulation (endogenous)
 
@@ -767,7 +769,7 @@ localfit_orig_model<-psem(
 summary(localfit_orig_model)
 ```
 
-By running `check_models()` on each subcomponent of the model, it becomes clear that percent conifer and aboveground C have moderately high VIF due to their high correlation with each other. We removed aboveground C from the model for macroaggregates and percent conifer from the model for soil C accumulation, although we caution that in any case it is a challenge to attribute anything definitely to one or the other variable.
+By running `check_models()` on each subcomponent of the model, it becomes clear that percent conifer and aboveground woody C have moderately high VIF due to their high correlation with each other. We removed aboveground woody C from the model for macroaggregates and percent conifer from the model for soil C accumulation, although we caution that in any case it is a challenge to attribute anything definitely to one or the other variable.
 
 Two other things are apparent. One is that the block random effect for soil C reaches a singular fit, so we remove it. The other is that the tests of directed separation show conditional dependence between percent AM and woody C. Since percent AM is exogenous, we add it as a predictor of woody C. We arrive at the following model:
 
@@ -790,7 +792,7 @@ check_model(lmer(macro250~percentAM+percentCon+(1|block),data=carbon_seq_standar
 check_model(lm(soilC~species_richness+percentAM+woodyC+macro250,data=carbon_seq_standard))
 ```
 
-Each of these plots looks reasonably good. There is no particular need to fit a more minimal model that only retains significant terms, but if we did, it would look like this:
+Each of these plots looks reasonably good, barring violations of the normality of residuals assumption, which shouldn't be too concerning. There is no particular need to fit a more minimal model that only retains significant terms, but if we did, it would look like this:
 
 ```{r SEM_min, warning=F}
 localfit_min_model<-psem(
@@ -800,3 +802,13 @@ localfit_min_model<-psem(
      data=carbon_seq_standard)
 )
 ```
+
+## References
+
+Grossman, J. J., Cavender-Bares, J., Hobbie, S. E., Reich, P. B., & Montgomery, R. A. (2017). Species richness and traits predict overyielding in stem growth in an early-successional tree diversity experiment. Ecology, 98(10), 2601–2614.
+
+Laliberté, E., & Legendre, P. (2010). A distance-based framework for measuring functional diversity from multiple traits. Ecology, 91(1), 299–305.
+
+Loreau, M., & Hector, A. (2001). Partitioning selection and complementarity in biodiversity experiments. Nature, 412(6842), 72–76.
+
+Niinemets, Ü., & Valladares, F. (2006). Tolerance to Shade, Drought, and Waterlogging of Temperate Northern Hemisphere Trees and Shrubs. Ecological Monographs, 76(4), 521–547.
