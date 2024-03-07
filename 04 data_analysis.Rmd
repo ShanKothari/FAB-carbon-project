@@ -182,6 +182,12 @@ summary(lmer(soil_moisture~macro250+(1|block),data=carbon_seq))
 ## and for Nakagawa & Schielzeth Rc2 and Rm2, one can run:
 # r.squaredGLMM(lmer(soil_moisture~macro250+(1|block),data=carbon_seq))
 
+## another possibility is to simply treat block
+## as a fixed effect to avoid endogeneity problems
+## since blocks vary in macroaggregates
+## however, this yields very similar results
+summary(lm(soil_moisture~macro250+as.factor(block),data=carbon_seq))
+
 ggplot(data=carbon_seq,aes(x=macro250,y=soil_moisture,color=as.factor(block)))+
   geom_point(size=2)+geom_smooth(method="lm",se=F,linewidth=2)
 ```
@@ -190,9 +196,7 @@ ggplot(data=carbon_seq,aes(x=macro250,y=soil_moisture,color=as.factor(block)))+
 check_model(lmer(soil_moisture~macro250+(1|block),data=carbon_seq))
 ```
 
-There is evidently a close relationship between soil moisture and macroaggregate fraction. Indeed, since the blocks vary in macroaggregate content, this model may shrink the parameter estimate.
-
-How about pH? As it turns out, it isn't correlated with soil moisture but is correlated with macroaggregates.
+There is evidently a close relationship between soil moisture and macroaggregate fraction. How about pH? As it turns out, it isn't correlated with soil moisture but is correlated with macroaggregates.
 
 ```{r moisture_pH, warning = F, message = F}
 ## block random intercept yields singular fit
@@ -253,6 +257,12 @@ A lot of recent work in ecosystem ecology links the accumulation of stable soil 
 summary(lmer(soilC_2013~macro250+(1|block),data=carbon_seq))
 # summary(lmer(perC_2013~macro250+(1|block),data=carbon_seq))
 
+## another possibility is to simply treat block
+## as a fixed effect to avoid endogeneity problems
+## since blocks vary in macroaggregates
+## however, this yields the same results
+summary(lm(soilC_2013~macro250+as.factor(block),data=carbon_seq))
+
 ggplot(data=carbon_seq,aes(x=macro250,y=soilC_2013,color=as.factor(block)))+
   geom_point(size=2)+geom_smooth(method="lm",se=F,linewidth=2)
 ```
@@ -262,6 +272,12 @@ ggplot(data=carbon_seq,aes(x=macro250,y=soilC_2013,color=as.factor(block)))+
 ## of the block random intercept
 summary(lmer(soilC_2019~macro250+(1|block),data=carbon_seq))
 # summary(lmer(perC_2019~macro250+(1|block),data=carbon_seq))
+
+## another possibility is to simply treat block
+## as a fixed effect to avoid endogeneity problems
+## since blocks vary in macroaggregates
+## however, this yields the same results
+summary(lm(soilC_2019~macro250+as.factor(block),data=carbon_seq))
 
 ggplot(data=carbon_seq,aes(x=macro250,y=soilC_2019,color=as.factor(block)))+
   geom_point(size=2)+geom_smooth(method="lm",se=F,linewidth=2)
@@ -275,7 +291,7 @@ ggplot(data=carbon_seq,aes(x=macro250,y=soilC,color=as.factor(block)))+
   geom_point(size=2)+geom_smooth(method="lm",se=F,linewidth=2)
 ```
 
-These plots offer scant evidence that macroaggregates have much relation to soil C, accounting for the non-independence of plots from the same block. From a more basic soil science perspective, we might wish to see whether there is a correlation between soil percent C and macroaggregates across the full dataset (without the block random effect). There is, although this relationship is perhaps surprisingly weak, and (even more surprisingly) is stronger when examining percent C in 2013 than 2019:
+These plots offer scant evidence that macroaggregates have much relation to soil C, accounting for the non-independence of plots from the same block. From a more basic soil science perspective, we might wish to see whether there is a correlation between soil percent C and macroaggregates across the full dataset (without block random or fixed effects). There is, although this relationship is perhaps surprisingly weak, and (even more surprisingly) is stronger when examining percent C in 2013 than 2019:
 
 ```{r perC_macro}
 summary(lm(perC_2013~macro250,data=carbon_seq))
@@ -296,6 +312,9 @@ Although soil C pools and macroaggregates are not strongly related, it turns out
 summary(lmer(soilC_2013~soil_moisture+(1|block),data=carbon_seq))
 ## singular fit
 summary(lm(soilC_2019~soil_moisture,data=carbon_seq))
+
+## these findings can easily be reproduced with block as a fixed effect
+## with minimal changes to parameter estimates
 
 ggplot(data=carbon_seq,aes(x=soil_moisture,y=soilC_2019,color=as.factor(block)))+
   geom_point(size=2)+geom_smooth(method="lm",se=F,linewidth=2)
