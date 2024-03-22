@@ -67,11 +67,12 @@ infer.diam<-function(diameter_ind,height_ind,species_code,df){
 ## infer basal diameter using models that incorporate height and DBH
 FABdata$diameter_2019_inf_dbh<-NA
 for(i in 1:nrow(FABdata)){
-  FABdata$diameter_2019_inf_dbh[i]<-with(FABdata,infer.diam.dbh(diameter_2019[i],
-                                                                dbh_2019[i],
-                                                                height_2019[i],
-                                                                species_code[i],
-                                                                df=FABmodel))
+  FABdata$diameter_2019_inf_dbh[i]<-with(FABdata,
+                                         infer.diam.dbh(diameter_2019[i],
+                                                        dbh_2019[i],
+                                                        height_2019[i],
+                                                        species_code[i],
+                                                        df=FABmodel))
 }
 
 ## infer basal diameter using models that incorporate height only
@@ -84,9 +85,9 @@ for(i in 1:nrow(FABdata)){
 }
 
 ## calculate percent RMSD for models
-# max<-range(FABmodel$diameter[FABmodel$species_code=="TIAM" & !is.na(FABmodel$dbh)],na.rm=T)[2]
-# min<-range(FABmodel$diameter[FABmodel$species_code=="TIAM" & !is.na(FABmodel$dbh)],na.rm=T)[1]
-# perRMSD<-sqrt(mean(lm(diameter~height,data=FABmodel[FABmodel$species_code=="TIAM",])$residuals^2))/(max-min)
+# max<-range(FABmodel$diameter[FABmodel$species_code=="BEPA" & !is.na(FABmodel$dbh)],na.rm=T)[2]
+# min<-range(FABmodel$diameter[FABmodel$species_code=="BEPA" & !is.na(FABmodel$dbh)],na.rm=T)[1]
+# sqrt(mean(lm(diameter~height+dbh,data=FABmodel[FABmodel$species_code=="BEPA",])$residuals^2))/(max-min)
 
 ##########################
 ## create a table of wood density (from Jenkins)
@@ -105,10 +106,11 @@ wood_df<-data.frame(species_code=species_code,
 ####################
 ## estimating biomass for all species
 
-## here we use the height-based estimates of unmeasured
-## basal diameter when needed, but we can change the variable
-## 'diameter_2019_inf' to 'diameter_2019_inf_dbh'
-## to switch to models that use both height and DBH
+## here we use the height- AND dbh-based estimates of
+## unmeasured basal diameter when needed, but we can
+## change the variable 'diameter_2019_inf_dbh' to
+## 'diameter_2019_inf' to switch to models that just
+## use height
 
 FABdata$biomass_estimate<-NA
 for(i in 1:nrow(FABdata)){
@@ -188,4 +190,4 @@ for(i in 1:nrow(FABdata)){
 FABdata$C_content<-wood_df$C_content[match(FABdata$species_code,wood_df$species_code)]
 FABdata$C_estimate<-FABdata$biomass_estimate*FABdata$C_content
 
-write.csv(FABdata,"ProcessedData/FAB_Cestimate.csv")
+write.csv(FABdata,"ProcessedData/FAB_Cestimate.csv", row.names = F)
