@@ -89,6 +89,10 @@ for(i in 1:nrow(FABdata)){
 # min<-range(FABmodel$diameter[FABmodel$species_code=="BEPA" & !is.na(FABmodel$dbh)],na.rm=T)[1]
 # sqrt(mean(lm(diameter~height+dbh,data=FABmodel[FABmodel$species_code=="BEPA",])$residuals^2))/(max-min)
 
+## just for reference: conical volumes in 2016 and 2019
+FABdata$CV_2019<-pi*(FABdata$diameter_2019_inf_dbh/20)^2*(FABdata$height_2019)/3
+FABdata$CV_2016<-pi*(FABdata$diameter_2016/20)^2*(FABdata$height_2016)/3
+
 ##########################
 ## create a table of wood density (from Jenkins)
 ## and carbon content (from Lamlom and Savidge)
