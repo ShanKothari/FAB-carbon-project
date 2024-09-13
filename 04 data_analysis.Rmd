@@ -5,15 +5,15 @@ author:
   - Reb Bryant, Shan Kothari, Jeannine Cavender-Bares, Stephanie J. Curran,
   - Jake J. Grossman, Sarah E. Hobbie, Charlotte Nash, Grace C. Neumiller, Craig R. See
   - "**Journal:** *Ecological Applications*"
+bibliography: references.bib
 output:
   pdf_document:
     toc: true
-
 ---
 
 ```{r setup, include=FALSE}
 knitr::opts_chunk$set(echo = TRUE)
-knitr::opts_knit$set(root.dir = "C:/Users/querc/Dropbox/FABCarbonProject/ProcessedData")
+knitr::opts_knit$set(root.dir = "C:/Users/Shan Kothari/Dropbox/FABCarbonProject/ProcessedData")
 ```
 
 ## Setting up the workspace
@@ -22,7 +22,7 @@ This document is meant to provide a narrative summary to the statistical analyse
 
 Because this document is only meant for the technical purpose of supporting the adequacy of our statistical analyses, we do not in general make much attempt to present output in a polished form. For example, units are generally omitted from axis labels; readers are advised to look to the main text or the metadata accompanying the data repository for them. We note briefly that, as is standard in R Markdown, all figures correspond to the blocks of code that *precede* them, even if those blocks are on the previous page.
 
-The GitHub repository housing this document can be found at [this link](https://github.com/ShanKothari/FAB-carbon-project). A stable archived version can be found at Kothari et al. (2024).
+The GitHub repository housing this document can be found at [this link](https://github.com/ShanKothari/FAB-carbon-project). A stable archived version can be found at @kothari2024.
 
 Our first step is to load a number of packages. Although this paper was a collaborative work in which multiple co-authors were working in their own R environments, all results have been checked under the package numbers listed in *R v.4.2.1*.
 
@@ -38,7 +38,7 @@ library(ggplot2) ## 3.4.4
 library(emmeans) ## 1.10.0
 ```
 
-The archived data can be found at the EDI Data Portal (Bryant et al. 2023). After setting the working directory to where we saved the data file, we can read it in.
+The archived data can be found at the EDI Data Portal @bryant2023. After setting the working directory to where we saved the data file, we can read it in.
 
 ```{r read}
 # setwd(".")
@@ -165,9 +165,9 @@ Although the functional form of the relationship now evidently differs, the coef
 
 We measured three other edaphic properties that we consider here for their relationships with each other and with soil C:
 
-*macroaggregates (250 $\mu m$ diameter and up)
-*soil moisture
-*pH
+-   macroaggregates (250 $\mu m$ diameter and up)
+-   soil moisture
+-   pH
 
 First of all, how do these three correlate with each other? Macroaggregates are commonly associated with the ability to retain moisture, so we can test the relationship between macroaggregates and soil moisture.
 
@@ -299,7 +299,7 @@ ggplot(data=carbon_seq,aes(x=macro250,y=perC_2019,color=as.factor(block)))+
   geom_point(size=2)+geom_smooth(method="lm",se=F,linewidth=2)
 ```
 
-To the extent that there appears to be a relationship across the full dataset, it appears largely driven by the fact that Block 1 has higher macroaggregates than Block 3 in particular, and greater initial and final percent C than Blocks 2 and 3. (These differences in percent C are largely offset by lower bulk density when calculating the top 20 cm C pool, such that there remain no post-treatment block differences in soil C pools or soil C accumulation.) 
+To the extent that there appears to be a relationship across the full dataset, it appears largely driven by the fact that Block 1 has higher macroaggregates than Block 3 in particular, and greater initial and final percent C than Blocks 2 and 3. (These differences in percent C are largely offset by lower bulk density when calculating the top 20 cm C pool, such that there remain no post-treatment block differences in soil C pools or soil C accumulation.)
 
 Although soil C pools and macroaggregates are not strongly related, it turns out that soil C and soil moisture are, based on pools (or percent C) in both 2013 and 2019:
 
@@ -380,19 +380,19 @@ check_model(lmer(soil_moisture~woodyC+(1|block),data=carbon_seq))
 
 One of the core goals of our paper is to show how carbon storage in our experimental plots was influenced by the diversity of planted trees in the first six years of the experiment. We estimated carbon storage across three pools:
 
-* aboveground wood
-* soil (0-20 cm)--expressed as change from pre-treatment soil carbon
-* fine roots (0-20 cm)
+-   aboveground wood
+-   soil (0-20 cm)--expressed as change from pre-treatment soil carbon
+-   fine roots (0-20 cm)
 
-Besides these pools, we also calculated the net biodiversity effect (NBE) for mixture plots as the difference between the observed pools and monoculture-based expectations. (The NBE is synonymous with overyielding, and we use the abbreviation OY in variable names because that was what we chose in early stages of the project.) For aboveground wood, we further partitioned the NBE into complementarity and selection effects following Loreau & Hector (2001).
+Besides these pools, we also calculated the net biodiversity effect (NBE) for mixture plots as the difference between the observed pools and monoculture-based expectations. (The NBE is synonymous with overyielding, and we use the abbreviation OY in variable names because that was what we chose in early stages of the project.) For aboveground wood, we further partitioned the NBE into complementarity and selection effects following @lh2001.
 
 We considered three facets of diversity:
 
-* species richness
-* Laliberté and Legendre (2010)'s functional dispersion (FDis), as reported by Grossman et al. (2017)
-* Helmus et al. (2007)'s phylogenetic species variability (PSV), as reported by Grossman et al. (2017)
+-   species richness
+-   @ll2010's functional dispersion (FDis), as reported by @grossman2017
+-   @helmus2007's phylogenetic species variability (PSV), as reported by @grossman2017
 
-The traits that went into the calculation of FDis include: leaf mass per area, leaf nitrogen concentration, leaf habit (categorical), wood density, mycorrhizal type (categorical), leaf calcium concentration, and indices of shade, drought, and waterlogging tolerance from Niinemets & Valladares (2006). Full details are found in the paper by Grossman et al. (2017).
+The traits that went into the calculation of FDis include: leaf mass per area, leaf nitrogen concentration, leaf habit (categorical), wood density, mycorrhizal type (categorical), leaf calcium concentration, and indices of shade, drought, and waterlogging tolerance from @nv2006. Full details are found in the paper by @grossman2017.
 
 The functional and phylogenetic diversity metrics chosen are designed not to be dependent on species richness. However, FDis and PSV are both 0 for monocultures--by default for FDis and as an analysis choice for PSV. As a result, they do end up somewhat correlated with each other and with species richness. As we will see, multicollinearity does not end up being a severe problem in most cases.
 
@@ -479,9 +479,9 @@ check_model(mw_model)
 
 Robust regression slightly shrinks parameter estimates here, but yields a qualitatively very similar model.
 
-The NBE is often partitioned via Loreau & Hector (2001)'s method into complementarity and selection effects. Complementarity effects (CE) are based on the mean of species' *relative* yields and are often taken to indicate synergistic interactions like niche partitioning or facilitation. Selection (SE) effects describe how more productive species tend to show greater (or lesser) relative boosts in productivity than average in mixtures.
+The NBE is often partitioned via @lh2001's method into complementarity and selection effects. Complementarity effects (CE) are based on the mean of species' *relative* yields and are often taken to indicate synergistic interactions like niche partitioning or facilitation. Selection (SE) effects describe how more productive species tend to show greater (or lesser) relative boosts in productivity than average in mixtures.
 
-Although CE and SE must sum to NBE, it is possible for one to be greater than the NBE (or even total plot biomass) if the other is negative. (It is also possible for total overyielding to be negative, in which case it may be called underyielding.) Although CE and SE are expressed in the same units as NBE (here, kg biomass per ha), it can be hard to make sense of extreme CE or SE values in these terms. For these reasons, we choose to focus on whether they are generally positive or negative than on their actual magnitudes. Starting with the Loreau & Hector (2001) paper itself, it is common for BEF researchers to expect positive CE and non-positive SE on average across plots. This would imply that (1) species tend to overperform in mixture and (2) it is not only the most productive species that overperform in mixture. It may help to look at the data quickly before proceeding.
+Although CE and SE must sum to NBE, it is possible for one to be greater than the NBE (or even total plot biomass) if the other is negative. (It is also possible for total overyielding to be negative, in which case it may be called underyielding.) Although CE and SE are expressed in the same units as NBE (here, kg biomass per ha), it can be hard to make sense of extreme CE or SE values in these terms. For these reasons, we choose to focus on whether they are generally positive or negative than on their actual magnitudes. Starting with the @lh2001 paper itself, it is common for BEF researchers to expect positive CE and non-positive SE on average across plots. This would imply that (1) species tend to overperform in mixture and (2) it is not only the most productive species that overperform in mixture. It may help to look at the data quickly before proceeding.
 
 ```{r CESE}
 plot(woodyCE~species_richness,data=carbon_seq_woodyOY)
@@ -550,7 +550,6 @@ check_model(mrt_model)
 ```
 
 The selected model (with no predictors) does a poor job of meeting assumptions, but even changing out `rootC` for `log(rootC)`, which meets the assumptions better, yields a 'best' model with no predictor variables. The same is true of robust regression. We move on to the NBE.
-
 
 ```{r rootC_OY, message=F, fig.height=8}
 ## overyielding in root C
@@ -670,7 +669,7 @@ anova(macro_myco)
 
 We conducted an exploratory analysis of the relationships between various PLFAs (measured in 2016) and either the change in soil C pools or the final pool in 2019. The idea here is that microbial activity could be a driver of how much of the C inputs are actually retained in the soil. However, we don't have the temporal sampling needed to support a clean causal story here, so these correlations are best interpreted as just that: correlations. On a statistical level, it may be worth noting the large deviations from the normality of residuals assumption in some of these models, especially those with a random effect.
 
-Although many PLFAs were measured (and Grossman et al. 2019 has further details), we selected certain PLFAs for examination in the analyses below.
+Although many PLFAs were measured (and @grossman2019 has further details), we selected certain PLFAs for examination in the analyses below.
 
 ```{r 15:0_iso}
 summary(lmer(soilC~X15.0_iso.pp+(1|block),data=carbon_seq))
@@ -751,12 +750,12 @@ We use structural equation modeling (SEM) to tie together our hypotheses in a mo
 
 We select six variables:
 
-* species richness (exogenous)
-* percent of planted trees associated with AM fungi (exogenous)
-* percent of planted trees that are conifers (exogenous)
-* aboveground woody C (endogenous)
-* macroaggregates (endogenous)
-* soil C accumulation (endogenous)
+-   species richness (exogenous)
+-   percent of planted trees associated with AM fungi (exogenous)
+-   percent of planted trees that are conifers (exogenous)
+-   aboveground woody C (endogenous)
+-   macroaggregates (endogenous)
+-   soil C accumulation (endogenous)
 
 The first step is to drop rows with NAs in any of these variables, then z-standardize all of them so that regression coefficients in the SEM are standardized:
 
@@ -797,7 +796,7 @@ localfit_full_model<-psem(
 summary(localfit_full_model)
 ```
 
-As the Fisher's C > 0.05 shows, this model fits better than the one above. The in-depth interpretation of this model is in the main text. We can check each of the submodels of the full SEM to make sure that it means standard assumptions.
+As the Fisher's C *p*-value \> 0.05 shows, this model fits better than the one above. The in-depth interpretation of this model is in the main text. We can check each of the submodels of the full SEM to make sure that it means standard assumptions.
 
 ```{r SEM_checking,fig.height=8}
 check_model(lmer(woodyC~species_richness+percentCon+percentAM+(1|block),data=carbon_seq_standard))
@@ -817,11 +816,3 @@ localfit_min_model<-psem(
 ```
 
 ## References
-
-Grossman, J. J., Cavender-Bares, J., Hobbie, S. E., Reich, P. B., & Montgomery, R. A. (2017). Species richness and traits predict overyielding in stem growth in an early-successional tree diversity experiment. Ecology, 98(10), 2601–2614.
-
-Laliberté, E., & Legendre, P. (2010). A distance-based framework for measuring functional diversity from multiple traits. Ecology, 91(1), 299–305.
-
-Loreau, M., & Hector, A. (2001). Partitioning selection and complementarity in biodiversity experiments. Nature, 412(6842), 72–76.
-
-Niinemets, Ü., & Valladares, F. (2006). Tolerance to Shade, Drought, and Waterlogging of Temperate Northern Hemisphere Trees and Shrubs. Ecological Monographs, 76(4), 521–547.
