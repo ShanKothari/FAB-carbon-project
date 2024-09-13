@@ -38,7 +38,7 @@ library(ggplot2) ## 3.4.4
 library(emmeans) ## 1.10.0
 ```
 
-The archived data can be found at the EDI Data Portal @bryant2023. After setting the working directory to where we saved the data file, we can read it in.
+The archived data can be found at the EDI Data Portal (@bryant2023). After setting the working directory to where we saved the data file, we can read it in.
 
 ```{r read}
 # setwd(".")
