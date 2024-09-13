@@ -1,6 +1,6 @@
 ---
 title: "Independent effects of tree diversity on aboveground woody and soil carbon pools after six years of experimental afforestation"
-subtitle: "Appendix S2: Statistical analyses"
+subtitle: "Appendix S1: Statistical analyses"
 author:
   - Reb Bryant, Shan Kothari, Jeannine Cavender-Bares, Stephanie J. Curran,
   - Jake J. Grossman, Sarah E. Hobbie, Charlotte Nash, Grace C. Neumiller, Craig R. See
@@ -18,13 +18,13 @@ knitr::opts_knit$set(root.dir = "C:/Users/querc/Dropbox/FABCarbonProject/Process
 
 ## Setting up the workspace
 
-This document is meant to provide a narrative summary to the statistical analyses accompanying the manuscript "Independent effects of tree diversity on aboveground woody and soil carbon pools after six years of experimental afforestation" by Bryant et al. (in review, as of `r Sys.Date()`). We show the R output from the models in the manuscript and test the validity of various statistical assumptions underlying our model choices. In cases when these assumptions are violated, we perform robustness checks to show at the very least that the qualitative structure of the models is supported, and to assess the plausible variation in parameter estimates.
+This document is meant to provide a narrative summary to the statistical analyses accompanying the manuscript "Independent effects of tree diversity on aboveground woody and soil carbon pools after six years of experimental afforestation." We show the R output from the models in the manuscript and test the validity of various statistical assumptions underlying our model choices. In cases when these assumptions are violated, we perform robustness checks to show at the very least that the qualitative structure of the models is supported, and to assess the plausible variation in parameter estimates.
 
 Because this document is only meant for the technical purpose of supporting the adequacy of our statistical analyses, we do not in general make much attempt to present output in a polished form. For example, units are generally omitted from axis labels; readers are advised to look to the main text or the metadata accompanying the data repository for them. We note briefly that, as is standard in R Markdown, all figures correspond to the blocks of code that *precede* them, even if those blocks are on the previous page.
 
-Our first step is to load a number of packages. Although this paper was a collaborative work in which multiple co-authors were working in their own R environments, all results have been checked under the package numbers listed in *R v.4.2.1*.
+The GitHub repository housing this document can be found at [this link](https://github.com/ShanKothari/FAB-carbon-project). A stable archived version can be found at Kothari et al. (2024).
 
-<!-- in the manuscript we wrote 4.1.1 -->
+Our first step is to load a number of packages. Although this paper was a collaborative work in which multiple co-authors were working in their own R environments, all results have been checked under the package numbers listed in *R v.4.2.1*.
 
 ```{r packages, echo = T, warning=F, message=F}
 library(lme4) ## 1.1.35.1
@@ -38,11 +38,7 @@ library(ggplot2) ## 3.4.4
 library(emmeans) ## 1.10.0
 ```
 
-Next, we go to the working directory where we saved the archived data file and read it in.
-
-<!-- include a URL and DOI where the data can be downloaded -->
-<!-- note: we should change the name of this file -->
-<!-- also include a URL and DOI for the GitHub / Zenodo repository housing this walkthrough -->
+The archived data can be found at the EDI Data Portal (Bryant et al. 2023). After setting the working directory to where we saved the data file, we can read it in.
 
 ```{r read}
 # setwd(".")
@@ -503,8 +499,6 @@ wilcox.test(carbon_seq_woodyOY$woodySE)
 
 There is some evidence that CE differs from 0, but not much evidence that SE does.
 
-<!-- we should change the results section and discussion to match this -->
-
 ### Soil C accumulation and net biodiversity effects
 
 We can now do the same for soil C accumulation:
@@ -775,7 +769,7 @@ standard_cols<-c("species_richness","woodyC","soilC",
 carbon_seq_standard[,standard_cols]<-scale(carbon_seq_standard[,standard_cols])
 ```
 
-As explained in the main text and Appendix I, we proposed an initial model based on *a priori* hypotheses and earlier data analyses. The structure of this model is as follows:
+As explained in the main text and Appendix S2, we proposed an initial model based on *a priori* hypotheses and earlier data analyses. The structure of this model is as follows:
 
 ```{r SEM_orig, warning=F, message=F}
 localfit_orig_model<-psem(
