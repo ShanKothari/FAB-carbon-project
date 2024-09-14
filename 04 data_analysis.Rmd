@@ -2,7 +2,7 @@
 title: "Independent effects of tree diversity on aboveground woody and soil carbon pools after six years of experimental afforestation"
 subtitle: "Appendix S1: Statistical analyses"
 author:
-  - Reb Bryant, Shan Kothari, Jeannine Cavender-Bares, Stephanie J. Curran,
+  - Reb L. Bryant, Shan Kothari, Jeannine Cavender-Bares, Stephanie J. Curran,
   - Jake J. Grossman, Sarah E. Hobbie, Charlotte Nash, Grace C. Neumiller, Craig R. See
   - "**Journal:** *Ecological Applications*"
 bibliography: references.bib
@@ -16,13 +16,15 @@ knitr::opts_chunk$set(echo = TRUE)
 knitr::opts_knit$set(root.dir = "C:/Users/Shan Kothari/Dropbox/FABCarbonProject/ProcessedData")
 ```
 
-## Setting up the workspace
+## Introduction
 
 This document is meant to provide a narrative summary to the statistical analyses accompanying the manuscript "Independent effects of tree diversity on aboveground woody and soil carbon pools after six years of experimental afforestation." We show the R output from the models in the manuscript and test the validity of various statistical assumptions underlying our model choices. In cases when these assumptions are violated, we perform robustness checks to show at the very least that the qualitative structure of the models is supported, and to assess the plausible variation in parameter estimates.
 
 Because this document is only meant for the technical purpose of supporting the adequacy of our statistical analyses, we do not in general make much attempt to present output in a polished form. For example, units are generally omitted from axis labels; readers are advised to look to the main text or the metadata accompanying the data repository for them. We note briefly that, as is standard in R Markdown, all figures correspond to the blocks of code that *precede* them, even if those blocks are on the previous page.
 
 The GitHub repository housing this document can be found at [this link](https://github.com/ShanKothari/FAB-carbon-project). A stable archived version can be found at @kothari2024.
+
+## Setting up the workspace
 
 Our first step is to load a number of packages. Although this paper was a collaborative work in which multiple co-authors were working in their own R environments, all results have been checked under the package numbers listed in *R v.4.2.1*.
 
